@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>Attendance History</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+
+</head>
+
+<body class="bg-light">
+
+<div class="container mt-5">
+
+    <h2 class="mb-4">Attendance History</h2>
+
+    <table class="table table-bordered table-hover">
+
+        <thead class="table-dark">
+
+            <tr>
+
+                <th>Date</th>
+
+                <th>Name</th>
+
+                <th>Roll No</th>
+
+                <th>Status</th>
+
+            </tr>
+
+        </thead>
+
+        <tbody>
+
+        <% attendance.forEach(record => { %>
+
+            <tr>
+
+                <td><%= new Date(record.date).toLocaleDateString() %></td>
+
+                <td><%= record.studentId.name %></td>
+
+                <td><%= record.studentId.rollNo %></td>
+
+                <td>
+
+                    <% if(record.present){ %>
+
+                        <span class="badge bg-success">Present</span>
+
+                    <% } else { %>
+
+                        <span class="badge bg-danger">Absent</span>
+
+                    <% } %>
+
+                </td>
+
+            </tr>
+
+        <% }) %>
+
+        </tbody>
+
+    </table>
+
+    <a href="/dashboard" class="btn btn-primary">
+
+        ← Back to Dashboard
+
+    </a>
+
+</div>
+
+</body>
+
+</html>

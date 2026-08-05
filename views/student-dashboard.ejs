@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>AttendEase • Student Dashboard</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+<link rel="stylesheet" href="/css/style.css">
+
+</head>
+
+<body>
+
+<div class="phone">
+
+<%- include("partials/header") %>
+
+<div class="card-ui">
+
+<h3 style="text-align:center;">Welcome</h3>
+
+<h2 style="text-align:center;margin-bottom:10px;">
+
+<%= student.name %>
+
+</h2>
+
+<p style="text-align:center;color:#777;">
+
+<%= student.department %> • Semester <%= student.semester %>
+
+</p>
+
+</div>
+
+<div class="card-ui">
+
+<h4 style="margin-bottom:15px;">
+
+Attendance Percentage
+
+</h4>
+
+<h1 style="text-align:center;font-size:55px;color:#0B5D3B;">
+
+<%= percentage %>%
+
+</h1>
+
+<div class="progress">
+
+<div class="progress-fill"
+     data-width="<%= percentage %>">
+</div>
+
+</div>
+
+<br>
+
+<div style="display:flex;justify-content:space-between;text-align:center;">
+
+<div>
+
+<h3><%= presentAttendance %></h3>
+
+<p>Present</p>
+
+</div>
+
+<div>
+
+<h3><%= absentAttendance %></h3>
+
+<p>Absent</p>
+
+</div>
+
+<div>
+
+<h3><%= totalAttendance %></h3>
+
+<p>Total</p>
+
+</div>
+
+</div>
+
+</div>
+
+<div class="menu">
+
+<a href="/student-attendance" class="menu-card">
+
+<i class="bi bi-calendar-check"></i>
+
+<span>My Attendance</span>
+
+</a>
+
+<a href="/student-profile" class="menu-card">
+
+<i class="bi bi-person-circle"></i>
+
+<span>Profile</span>
+
+</a>
+
+<a href="#" class="menu-card">
+
+<i class="bi bi-bar-chart"></i>
+
+<span>Progress</span>
+
+</a>
+
+<a href="/logout" class="menu-card">
+
+<i class="bi bi-box-arrow-right"></i>
+
+<span>Logout</span>
+
+</a>
+
+</div>
+
+<%- include("partials/footer") %>
+
+<%- include("partials/bottom-nav") %>
+
+</div>
+
+<script>
+document.querySelectorAll(".progress-fill").forEach(bar => {
+    bar.style.width = bar.dataset.width + "%";
+});
+</script>
+
+</body>
+
+</html>

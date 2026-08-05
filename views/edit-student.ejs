@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>Edit Student</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+
+</head>
+
+<body class="bg-light">
+
+<div class="container mt-5">
+
+<div class="card p-4">
+
+<h2>Edit Student</h2>
+
+<form action="/edit-student/<%= student._id %>" method="POST">
+
+<div class="mb-3">
+
+<label>Name</label>
+
+<input
+type="text"
+name="name"
+class="form-control"
+value="<%= student.name %>">
+
+</div>
+
+<div class="mb-3">
+
+<label>Roll Number</label>
+
+<input
+type="text"
+name="rollNo"
+class="form-control"
+value="<%= student.rollNo %>">
+
+</div>
+
+<div class="mb-3">
+
+<label>Semester</label>
+
+<input
+type="number"
+name="semester"
+class="form-control"
+value="<%= student.semester %>">
+
+</div>
+
+<div class="mb-3">
+
+<label>Department</label>
+
+<input
+type="text"
+name="department"
+class="form-control"
+value="<%= student.department %>">
+
+</div>
+
+<button class="btn btn-success">
+
+Update Student
+
+</button>
+
+</form>
+
+</div>
+
+</div>
+
+</body>
+
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+<title>My Profile</title>
+
+<link rel="stylesheet" href="/css/student-dashboard.css">
+
+</head>
+
+<body>
+
+<div class="phone">
+
+<div class="top">
+
+<img src="<%= student.photo %>" class="university-logo">
+
+<h1><%= student.name %></h1>
+
+<p><%= student.department %> • Semester <%= student.semester %></p>
+
+</div>
+
+<div class="attendance-card">
+
+<h4>Roll Number</h4>
+
+<p><%= student.rollNo %></p>
+
+<hr>
+
+<h4>Email</h4>
+
+<p><%= student.email %></p>
+
+<hr>
+
+<h4>Department</h4>
+
+<p><%= student.department %></p>
+
+<hr>
+
+<h4>Semester</h4>
+
+<p><%= student.semester %></p>
+
+</div>
+
+</div>
+
+</body>
+
+</html>
