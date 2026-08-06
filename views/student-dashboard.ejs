@@ -37,6 +37,26 @@
 
 </p>
 
+
+
+</div>
+
+<div id="attendancePopup" class="attendance-popup">
+
+    <i class="bi bi-bell-fill popup-icon"></i>
+
+    <h3>Attendance Started</h3>
+
+    <p id="countdownText">You have 60 seconds remaining.</p>
+
+    <button id="presentBtn" class="btn btn-success w-100">
+
+        <i class="bi bi-check-circle-fill"></i>
+
+        Present
+
+    </button>
+
 </div>
 
 <div class="card-ui">
@@ -133,13 +153,85 @@ Attendance Percentage
 
 <%- include("partials/bottom-nav") %>
 
+
 </div>
+
+
 
 <script>
 document.querySelectorAll(".progress-fill").forEach(bar => {
     bar.style.width = bar.dataset.width + "%";
 });
 </script>
+
+<script src="/socket.io/socket.io.js"></script>
+
+<script>
+
+const socket = io();
+
+socket.on("attendanceStarted", (data) => {
+
+    const popup = document.getElementById("attendancePopup");
+
+    popup.style.display = "block";
+
+    let timeLeft = 60;
+
+    const countdown = document.getElementById("countdownText");
+
+    countdown.innerHTML = `You have ${timeLeft} seconds remaining.`;
+
+    const timer = setInterval(() => {
+
+        timeLeft--;
+
+        countdown.innerHTML = `You have ${timeLeft} seconds remaining.`;
+
+        if (timeLeft <= 0) {
+
+            clearInterval(timer);
+
+            popup.style.display = "none";
+
+        }
+
+    },1000);
+
+});
+
+document.getElementById("presentBtn").addEventListener("click", async () => {
+
+    const response = await fetch("/attendance/present", {
+
+        method: "POST"
+
+    });
+
+    const result = await response.json();
+
+    if(result.success){
+
+        const btn = document.getElementById("presentBtn");
+
+        btn.innerHTML = '<i class="bi bi-check-circle-fill"></i> Present Marked';
+
+        btn.disabled = true;
+
+        btn.classList.remove("btn-success");
+
+        btn.classList.add("btn-secondary");
+
+    }else{
+
+        alert(result.message);
+
+    }
+
+});
+
+</script>
+
 
 </body>
 

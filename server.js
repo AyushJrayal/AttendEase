@@ -8,10 +8,23 @@ const Student = require("./models/Student");
 
 const Attendance = require("./models/Attendance");
 
+const AttendanceSession = require("./models/AttendanceSession");
+
 const path = require("path");
 
 const app = express();
 
+const http = require("http");
+const { Server } = require("socket.io");
+
+const server = http.createServer(app);
+const io = new Server(server);
+
+io.on("connection", (socket) => {
+
+    console.log("A user connected:", socket.id);
+
+});
 app.use(express.urlencoded({ extended: true }));
 
 app.use(session({
@@ -126,6 +139,27 @@ app.post("/admin-login", (req, res) => {
 
 });
 
+app.post("/start-attendance", async (req, res) => {
+
+    await AttendanceSession.create({
+
+        department: "B.Sc Computer Science",
+
+        semester: 3,
+
+        date: new Date().toISOString().split("T")[0],
+
+        isOpen: true,
+
+        startTime: new Date(),
+
+        endTime: new Date(Date.now() + 60000)
+
+    });
+
+    res.send("Attendance Session Started");
+
+});
 app.get("/dashboard", (req, res) => {
 
     if (!req.session.admin) {
@@ -294,6 +328,110 @@ app.get("/student-attendance", async (req, res) => {
 
 });
 
+app.post("/attendance/start", async (req, res) => {
+
+    try {
+
+        // Close any previous session
+        await AttendanceSession.updateMany(
+            {},
+            { isOpen: false }
+        );
+
+        // Today's date
+        const today = new Date().toISOString().split("T")[0];
+
+        // Create today's session
+        await AttendanceSession.create({
+
+    department: "BSc Computer Science",
+
+    semester: 1,
+
+    date: today,
+
+    isOpen: true,
+
+    startTime: new Date(),
+
+    endTime: new Date(Date.now() + 60000)
+
+});
+
+        console.log("Attendance Started");
+
+        io.emit("attendanceStarted", {
+
+    department: "BSc Computer Science",
+
+    semester: 1,
+
+    message: "Attendance Started"
+
+});
+
+        res.redirect("/attendance");
+
+    } catch (err) {
+
+        console.log(err);
+
+        res.send("Error Starting Attendance");
+
+    }
+
+});
+
+app.post("/attendance/present", async (req, res) => {
+
+    if (!req.session.student) {
+
+        return res.json({
+
+            success: false
+
+        });
+
+    }
+
+    const today = new Date().toISOString().split("T")[0];
+
+    const session = await AttendanceSession.findOne({
+
+        date: today,
+
+        isOpen: true
+
+    });
+
+    if (!session) {
+
+        return res.json({
+
+            success: false,
+
+            message: "Attendance Closed"
+
+        });
+
+    }
+
+    await Attendance.create({
+
+        studentId: req.session.student._id,
+
+        present: true
+
+    });
+
+    res.json({
+
+        success: true
+
+    });
+
+});
+
 app.post("/save-attendance", async (req, res) => {
 
     try {
@@ -433,6 +571,6 @@ app.get("/logout", (req, res) => {
 
 });
 
-app.listen(3000, () => {
+server.listen(3000, () => {
     console.log("Server Started");
 });

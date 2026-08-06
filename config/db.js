@@ -1,19 +1,16 @@
 const mongoose = require("mongoose");
 
-async function connectDB() {
+const connectDB = async () => {
+  try {
+    await mongoose.connect(
+      "mongodb+srv://tonistarktonistark61_db_user:UIHcX6SZlmv5cSik@attendease.qahldzq.mongodb.net/AttendEase?retryWrites=true&w=majority&appName=attendease"
+    );
 
-    try {
-
-        await mongoose.connect("mongodb://127.0.0.1:27017/attendease");
-
-        console.log("✅ MongoDB Connected");
-
-    } catch (error) {
-
-        console.log(error);
-
-    }
-
-}
+    console.log("MongoDB Atlas Connected");
+  } catch (err) {
+    console.error(err);
+    process.exit(1);
+  }
+};
 
 module.exports = connectDB;
