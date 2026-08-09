@@ -1,0 +1,230 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    background: #f5f7fa;
+    font-family: Arial, sans-serif;
+}
+
+.admin-login-page {
+    min-height: 100vh;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 20px;
+}
+
+.admin-login-card {
+    width: 100%;
+    max-width: 400px;
+
+    background: white;
+
+    padding: 30px 25px;
+
+    border-radius: 24px;
+
+    box-shadow:
+        0 10px 35px rgba(0, 0, 0, 0.08);
+
+    text-align: center;
+}
+
+
+/* LOGO */
+
+.admin-logo {
+    width: 95px;
+    height: 95px;
+
+    object-fit: contain;
+
+    display: block;
+
+    margin: 0 auto 12px;
+}
+
+
+/* TITLE */
+
+.admin-login-card h1 {
+    color: #08783f;
+
+    font-size: 34px;
+
+    font-weight: 700;
+
+    margin-bottom: 0;
+}
+
+.subtitle {
+    color: #777;
+
+    font-size: 16px;
+
+    margin-bottom: 25px;
+}
+
+
+/* ADMIN LABEL */
+
+.admin-heading {
+    color: #222;
+
+    font-size: 16px;
+
+    font-weight: 600;
+
+    margin-bottom: 20px;
+}
+
+.admin-heading i {
+    color: #08783f;
+
+    margin-right: 5px;
+}
+
+
+/* INPUTS */
+
+.input-group {
+    margin-bottom: 15px;
+}
+
+.input-group input {
+    width: 100%;
+
+    height: 50px;
+
+    border: none;
+
+    outline: none;
+
+    border-radius: 15px;
+
+    background: #f0f2f5;
+
+    padding: 0 16px;
+
+    font-size: 15px;
+
+    color: #222;
+
+    transition: 0.2s;
+}
+
+.input-group input:focus {
+    background: #e9ecef;
+
+    box-shadow:
+        0 0 0 2px rgba(8, 120, 63, 0.15);
+}
+
+.input-group input::placeholder {
+    color: #777;
+}
+
+
+/* LOGIN BUTTON */
+
+.admin-login-btn {
+    width: 100%;
+
+    height: 50px;
+
+    border: none;
+
+    border-radius: 15px;
+
+    background: #08783f;
+
+    color: white;
+
+    font-size: 16px;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: 0.2s;
+}
+
+.admin-login-btn:hover {
+    background: #066633;
+}
+
+.admin-login-btn:active {
+    transform: scale(0.98);
+}
+
+
+/* BACK TO STUDENT LOGIN */
+
+.back-login {
+    display: block;
+
+    margin-top: 18px;
+
+    color: #08783f;
+
+    text-decoration: none;
+
+    font-size: 14px;
+
+    font-weight: 600;
+}
+
+.back-login:hover {
+    text-decoration: underline;
+}
+
+
+/* FOOTER */
+
+.footer {
+    margin-top: 30px;
+
+    color: #777;
+
+    font-size: 13px;
+
+    line-height: 21px;
+}
+
+.footer strong {
+    color: #08783f;
+}
+
+
+/* MOBILE */
+
+@media (max-width: 480px) {
+
+    .admin-login-page {
+        padding: 15px;
+    }
+
+    .admin-login-card {
+        padding: 25px 20px;
+
+        border-radius: 22px;
+    }
+
+    .admin-logo {
+        width: 85px;
+        height: 85px;
+    }
+
+    .admin-login-card h1 {
+        font-size: 31px;
+    }
+
+}

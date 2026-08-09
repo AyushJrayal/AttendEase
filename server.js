@@ -10,6 +10,8 @@ const Attendance = require("./models/Attendance");
 
 const AttendanceSession = require("./models/AttendanceSession");
 
+const Teacher = require("./models/Teacher");
+
 const path = require("path");
 
 const app = express();
@@ -24,7 +26,26 @@ io.on("connection", (socket) => {
 
     console.log("A user connected:", socket.id);
 
+    socket.on("studentJoin", (studentData) => {
+
+        if (!studentData) {
+            return;
+        }
+
+        const roomName =
+            `${studentData.department}-${studentData.semester}-${studentData.section}`;
+
+        socket.join(roomName);
+
+        console.log(
+            "Student joined room:",
+            roomName
+        );
+
+    });
+
 });
+
 app.use(express.urlencoded({ extended: true }));
 
 app.use(session({
@@ -33,7 +54,17 @@ app.use(session({
 
     resave: false,
 
-    saveUninitialized: false
+    saveUninitialized: false,
+
+    cookie: {
+
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+
+        httpOnly: true,
+
+        sameSite: "lax"
+
+    }
 
 }));
 
@@ -88,8 +119,9 @@ app.post("/student-register", async (req, res) => {
             fatherName: req.body.fatherName,
             rollNo: req.body.rollNo,
             semester: req.body.semester,
-            department: req.body.department,
-            mobile: req.body.mobile,
+department: req.body.department,
+section: req.body.section,
+mobile: req.body.mobile,
             email: req.body.email,
             password: req.body.password,
             state: req.body.state,
@@ -121,21 +153,44 @@ app.get("/admin-login", (req, res) => {
 
 });
 
-app.post("/admin-login", (req, res) => {
+app.post("/admin-login", async (req, res) => {
 
-    const username = req.body.username;
+    try {
 
-    const password = req.body.password;
+        const username = req.body.username;
+        const password = req.body.password;
 
-    if (username === "admin" && password === "admin123") {
+        const teacher = await Teacher.findOne({
+            username: username
+        });
 
+        if (!teacher) {
+
+            return res.send("Teacher Not Found");
+
+        }
+
+        if (teacher.password !== password) {
+
+            return res.send("Wrong Password");
+
+        }
+
+        // Save teacher in session
+        req.session.teacher = teacher;
+
+        // Keep admin session for existing dashboard protection
         req.session.admin = true;
 
-        return res.redirect("/dashboard");
+        res.redirect("/dashboard");
+
+    } catch (err) {
+
+        console.log(err);
+
+        res.send("Login Failed");
 
     }
-
-    res.send("Wrong Admin Username or Password");
 
 });
 
@@ -332,51 +387,146 @@ app.post("/attendance/start", async (req, res) => {
 
     try {
 
-        // Close any previous session
-        await AttendanceSession.updateMany(
-            {},
-            { isOpen: false }
+        // Make sure teacher is logged in
+        if (!req.session.teacher) {
+            return res.redirect("/admin-login");
+        }
+
+        const {
+            department,
+            semester,
+            section,
+            subject
+        } = req.body;
+
+        // Find only students belonging to this class
+        const students = await Student.find({
+            department,
+            semester: Number(semester),
+            section
+        });
+
+        if (students.length === 0) {
+            return res.status(404).send(
+                "No students found for this class."
+            );
+        }
+
+        // Current date
+        const now = new Date();
+
+        // Attendance ends after 60 seconds
+        const endTime = new Date(
+            now.getTime() + 60 * 1000
         );
 
-        // Today's date
-        const today = new Date().toISOString().split("T")[0];
+        // Create attendance session
+        const session = await AttendanceSession.create({
 
-        // Create today's session
-        await AttendanceSession.create({
+            department,
 
-    department: "BSc Computer Science",
+            semester: Number(semester),
 
-    semester: 1,
+            section,
 
-    date: today,
+            subject,
 
-    isOpen: true,
+            date: now.toISOString().split("T")[0],
 
-    startTime: new Date(),
+            isOpen: true,
 
-    endTime: new Date(Date.now() + 60000)
+            startTime: now,
 
-});
+            endTime
 
-        console.log("Attendance Started");
+        });
 
-        io.emit("attendanceStarted", {
+        // Create an ABSENT record for every student
+        // in this particular class.
+        await Attendance.insertMany(
 
-    department: "BSc Computer Science",
+            students.map(student => ({
 
-    semester: 1,
+                studentId: student._id,
 
-    message: "Attendance Started"
+                sessionId: session._id,
 
-});
+                present: false,
 
-        res.redirect("/attendance");
+                markedAt: null,
 
-    } catch (err) {
+                date: now
 
-        console.log(err);
+            }))
 
-        res.send("Error Starting Attendance");
+        );
+
+        // Notify only students from this class
+        io.to(
+            `${department}-${semester}-${section}`
+        ).emit(
+            "attendanceStarted",
+            {
+                sessionId: session._id,
+
+                department,
+
+                semester: Number(semester),
+
+                section,
+
+                subject,
+
+                startTime: now,
+
+                endTime,
+
+                duration: 60
+            }
+        );
+
+        // Automatically close attendance after 60 seconds
+        setTimeout(async () => {
+
+            try {
+
+                await AttendanceSession.findByIdAndUpdate(
+                    session._id,
+                    {
+                        isOpen: false
+                    }
+                );
+
+                console.log(
+                    `Attendance closed: ${session._id}`
+                );
+
+            } catch (error) {
+
+                console.error(
+                    "Error closing attendance:",
+                    error
+                );
+
+            }
+
+        }, 60 * 1000);
+
+        // Open the NEW teacher attendance page
+        res.redirect(
+            `/attendance/today/${session._id}`
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Start attendance error:",
+            error
+        );
+
+        res.status(500).send(
+            "Unable to start attendance."
+        );
 
     }
 
@@ -384,51 +534,161 @@ app.post("/attendance/start", async (req, res) => {
 
 app.post("/attendance/present", async (req, res) => {
 
-    if (!req.session.student) {
+    try {
 
-        return res.json({
+        // Make sure student is logged in
+        if (!req.session.student) {
+            return res.status(401).json({
+                success: false,
+                message: "Student not logged in."
+            });
+        }
 
-            success: false
+        const studentId = req.session.student._id;
 
+        // Find the currently open attendance session
+        const session = await AttendanceSession.findOne({
+            isOpen: true,
+            endTime: { $gt: new Date() }
+        }).sort({
+            startTime: -1
         });
 
-    }
+        if (!session) {
+            return res.json({
+                success: false,
+                message: "No attendance session is currently active."
+            });
+        }
 
-    const today = new Date().toISOString().split("T")[0];
+        // Make sure this student belongs to this class
+        const student = await Student.findById(studentId);
 
-    const session = await AttendanceSession.findOne({
+        if (!student) {
+            return res.json({
+                success: false,
+                message: "Student not found."
+            });
+        }
 
-        date: today,
+        if (
+            student.department !== session.department ||
+            Number(student.semester) !== Number(session.semester) ||
+            student.section !== session.section
+        ) {
+            return res.json({
+                success: false,
+                message: "This attendance session is not for your class."
+            });
+        }
 
-        isOpen: true
+        // Find the attendance record created when
+        // the teacher started the session
+        const attendance = await Attendance.findOne({
+            studentId: studentId,
+            sessionId: session._id
+        });
 
-    });
+        if (!attendance) {
+            return res.json({
+                success: false,
+                message: "Attendance record not found."
+            });
+        }
 
-    if (!session) {
+        // Prevent marking twice
+        if (attendance.present === true) {
+            return res.json({
+                success: true,
+                message: "Attendance already marked."
+            });
+        }
+
+        // Mark present
+        attendance.present = true;
+        attendance.markedAt = new Date();
+        attendance.date = new Date();
+
+        await attendance.save();
+
+        console.log(
+            `Attendance marked PRESENT: ${student.name} - ${student.rollNo}`
+        );
 
         return res.json({
+            success: true,
+            message: "Attendance marked successfully.",
+            markedAt: attendance.markedAt
+        });
 
+    } catch (error) {
+
+        console.error(
+            "Present attendance error:",
+            error
+        );
+
+        return res.status(500).json({
             success: false,
-
-            message: "Attendance Closed"
-
+            message: "Unable to mark attendance."
         });
 
     }
 
-    await Attendance.create({
+});
 
-        studentId: req.session.student._id,
+app.get("/attendance/today/:sessionId", async (req, res) => {
 
-        present: true
+    try {
 
-    });
+        if (!req.session.teacher) {
+            return res.redirect("/admin-login");
+        }
 
-    res.json({
+        const { sessionId } = req.params;
 
-        success: true
+        // Find the attendance session
+        const session = await AttendanceSession.findById(sessionId);
 
-    });
+        if (!session) {
+            return res.status(404).send(
+                "Attendance session not found."
+            );
+        }
+
+        // Get every attendance record for this session
+        // and also get student information
+        const attendance = await Attendance.find({
+            sessionId: session._id
+        })
+        .populate(
+            "studentId",
+            "name rollNo department semester section"
+        )
+        .sort({
+            "studentId.rollNo": 1
+        });
+
+        res.render(
+            "today-attendance",
+            {
+                session,
+                attendance
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Today's attendance error:",
+            error
+        );
+
+        res.status(500).send(
+            "Unable to load today's attendance."
+        );
+
+    }
 
 });
 
@@ -483,9 +743,11 @@ app.post("/add-student", async (req, res) => {
 
             semester: req.body.semester,
 
-            department: req.body.department,
+department: req.body.department,
 
-            email: req.body.email,
+section: req.body.section,
+
+email: req.body.email,
 
             password: req.body.password
 
@@ -550,6 +812,36 @@ app.get("/delete-student/:id", async (req, res) => {
     await Student.findByIdAndDelete(req.params.id);
 
     res.redirect("/students");
+
+});
+
+app.get("/create-teacher", async (req, res) => {
+
+    try {
+
+        const teacher = new Teacher({
+
+            name: "Teacher",
+
+            username: "teacher",
+
+            email: "teacher@attendease.com",
+
+            password: "teacher123"
+
+        });
+
+        await teacher.save();
+
+        res.send("Teacher Created Successfully");
+
+    } catch (err) {
+
+        console.log(err);
+
+        res.send("Teacher creation failed");
+
+    }
 
 });
 

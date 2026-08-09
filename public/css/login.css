@@ -160,3 +160,8 @@ color:#777;
 line-height:22px;
 
 }
+.phone {
+    width:100%;
+    max-width:420px;
+    min-height:100vh;
+}

@@ -1,61 +1,101 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
 
-<title>Admin Login</title>
+    <meta charset="UTF-8">
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>AttendEase • Admin Login</title>
+
+    <link
+        rel="stylesheet"
+        href="/css/login.css">
 
 </head>
 
-<body class="bg-light">
+<body>
 
-<div class="container vh-100 d-flex align-items-center">
+<div class="phone">
 
-<div class="card p-4 mx-auto" style="max-width:400px; width:100%;">
+    <!-- University Logo -->
+    <img
+        src="/images/university-logo.jpg"
+        class="logo"
+        alt="University Logo">
 
-<h2 class="text-center mb-4">
 
-👨‍💼 Admin Login
+    <!-- Title -->
+    <h1>AttendEase</h1>
 
-</h2>
+    <p class="subtitle">
+        Smart Attendance System
+    </p>
 
-<form action="/admin-login" method="POST">
 
-<div class="mb-3">
+    <!-- Admin Login Form -->
+    <form
+        action="/admin-login"
+        method="POST">
 
-<label>Username</label>
+        <input
+            type="text"
+            name="username"
+            placeholder="Username"
+            autocomplete="username"
+            required>
 
-<input
-type="text"
-name="username"
-class="form-control"
-required>
+        <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            autocomplete="current-password"
+            required>
 
-</div>
 
-<div class="mb-3">
+        <button
+            type="submit"
+            class="admin">
 
-<label>Password</label>
+            Admin Login
 
-<input
-type="password"
-name="password"
-class="form-control"
-required>
+        </button>
 
-</div>
+    </form>
 
-<button class="btn btn-dark w-100">
 
-Login
+    <!-- Back -->
+    <div class="or">
+        OR
+    </div>
 
-</button>
 
-</form>
+    <a
+        href="/"
+        class="register">
 
-</div>
+        ← Back to Student Login
+
+    </a>
+
+
+    <!-- Footer -->
+    <div class="footer">
+
+        Powered by JC Studio
+
+        <br>
+
+        Developed by Ayush Jaryal
+
+        <br>
+
+        🌐 Jaryal.shop
+
+    </div>
 
 </div>
 

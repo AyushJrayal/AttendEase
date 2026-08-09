@@ -8,9 +8,19 @@ const attendanceSchema = new mongoose.Schema({
         required: true
     },
 
+    sessionId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "AttendanceSession",
+        required: true
+    },
+
     present: {
         type: Boolean,
         required: true
+    },
+
+    markedAt: {
+        type: Date
     },
 
     date: {

@@ -7,83 +7,482 @@
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Attendance</title>
+    <title>Today's Attendance • AttendEase</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+        rel="stylesheet">
 
     <link rel="stylesheet" href="/css/style.css">
+
+    <style>
+
+        body {
+            background: #eef2f7;
+        }
+
+        .attendance-page {
+            max-width: 700px;
+            margin: auto;
+            padding: 25px 15px 50px;
+        }
+
+        .page-header {
+            background: linear-gradient(
+                135deg,
+                #0B5D3B,
+                #15803D
+            );
+
+            color: white;
+            border-radius: 25px;
+            padding: 25px;
+            margin-bottom: 20px;
+
+            box-shadow:
+                0 10px 25px rgba(0,0,0,.15);
+        }
+
+        .page-header h2 {
+            margin: 0;
+            font-weight: 700;
+        }
+
+        .page-header p {
+            margin: 7px 0 0;
+            opacity: .85;
+        }
+
+        .attendance-card {
+            background: white;
+            border-radius: 22px;
+            padding: 22px;
+            margin-bottom: 20px;
+
+            box-shadow:
+                0 5px 20px rgba(0,0,0,.07);
+        }
+
+        .attendance-card h5 {
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            font-weight: 600;
+        }
+
+        .form-select {
+            border-radius: 12px;
+            padding: 12px;
+        }
+
+        .start-btn {
+            border: none;
+            border-radius: 14px;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: 600;
+
+            background: #0B5D3B;
+            color: white;
+        }
+
+        .start-btn:hover {
+            background: #084a2f;
+            color: white;
+        }
+
+        .status-card {
+            text-align: center;
+        }
+
+        .status-icon {
+            font-size: 45px;
+            color: #0B5D3B;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 7px 15px;
+            border-radius: 50px;
+            background: #dcfce7;
+            color: #166534;
+            font-weight: 600;
+        }
+
+        .back-btn {
+            text-decoration: none;
+            color: #0B5D3B;
+            font-weight: 600;
+        }
+
+        @media (max-width: 576px) {
+
+            .attendance-page {
+                padding: 15px 12px 40px;
+            }
+
+            .page-header {
+                padding: 20px;
+                border-radius: 20px;
+            }
+
+            .page-header h2 {
+                font-size: 23px;
+            }
+
+            .attendance-card {
+                padding: 18px;
+                border-radius: 18px;
+            }
+
+        }
+
+    </style>
 
 </head>
 
 <body>
 
-<div class="container py-4">
+<div class="attendance-page">
 
-    <h2 class="mb-4">
+    <a href="/dashboard" class="back-btn d-inline-block mb-3">
 
-        BCA Semester 3
+        <i class="bi bi-arrow-left"></i>
 
-    </h2>
+        Dashboard
 
-    <form action="/attendance/start" method="POST" class="mb-3">
+    </a>
 
-    <button type="submit" class="btn btn-success">
-        🟢 Start Attendance (60 Seconds)
-    </button>
 
-</form>
+    <!-- HEADER -->
 
-    <div class="class-card p-3">
+    <div class="page-header">
 
-        <h5>Computer Networks</h5>
+        <div class="d-flex align-items-center gap-3">
 
-        <hr>
+            <i
+                class="bi bi-calendar-check-fill"
+                style="font-size:40px;">
+            </i>
 
-        <form action="/save-attendance" method="POST">
-        <% students.forEach(student => { %>
+            <div>
 
-<div class="form-check mb-2">
-<input
-class="form-check-input"
-type="checkbox"
-name="presentStudents"
-value="<%= student._id %>"
-id="<%= student.rollNo %>">
+                <h2>Today's Attendance</h2>
 
-    <label
-        class="form-check-label"
-        for="<%= student.rollNo %>">
+                <p>
+                    Create a new attendance session
+                </p>
 
-        <strong><%= student.name %></strong>
+            </div>
 
-        <br>
+        </div>
 
-        <small class="text-muted">
+    </div>
 
-            Roll No:
-            <%= student.rollNo %>
 
-            |
+    <!-- CLASS SELECTION -->
 
-            Semester:
-            <%= student.semester %>
+    <div class="attendance-card">
 
-        </small>
+        <h5>
 
-    </label>
+            <i class="bi bi-mortarboard-fill me-2"></i>
 
-</div>
+            Select Class
 
-<% }) %>
+        </h5>
 
-        <br>
 
-        <button class="btn login-btn w-100">
+        <form
+            action="/attendance/start"
+            method="POST">
 
-            Save Attendance
 
-        </button>
+            <!-- DEPARTMENT -->
+
+            <div class="mb-3">
+
+                <label class="form-label">
+
+                    Department
+
+                </label>
+
+                <select
+                    name="department"
+                    class="form-select"
+                    required>
+
+                    <option value="" selected disabled>
+
+                        Select Department
+
+                    </option>
+
+                    <option value="BSc Computer Science">
+
+                        B.Sc Computer Science
+
+                    </option>
+
+                    <option value="BSc IT">
+
+                        B.Sc IT
+
+                    </option>
+
+                    <option value="BCA">
+
+                        BCA
+
+                    </option>
+
+                    <option value="BA">
+
+                        B.A
+
+                    </option>
+
+                    <option value="BCom">
+
+                        B.Com
+
+                    </option>
+
+                    <option value="BSc">
+
+                        B.Sc
+
+                    </option>
+
+                    <option value="BSc Medical">
+
+                        B.Sc Medical
+
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- SEMESTER -->
+
+            <div class="mb-3">
+
+                <label class="form-label">
+
+                    Semester
+
+                </label>
+
+                <select
+                    name="semester"
+                    class="form-select"
+                    required>
+
+                    <option value="" selected disabled>
+
+                        Select Semester
+
+                    </option>
+
+                    <option value="1">
+
+                        1st Semester
+
+                    </option>
+
+                    <option value="2">
+
+                        2nd Semester
+
+                    </option>
+
+                    <option value="3">
+
+                        3rd Semester
+
+                    </option>
+
+                    <option value="4">
+
+                        4th Semester
+
+                    </option>
+
+                    <option value="5">
+
+                        5th Semester
+
+                    </option>
+
+                    <option value="6">
+
+                        6th Semester
+
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- SECTION -->
+
+            <div class="mb-3">
+
+                <label class="form-label">
+
+                    Section
+
+                </label>
+
+                <select
+                    name="section"
+                    class="form-select"
+                    required>
+
+                    <option value="" selected disabled>
+
+                        Select Section
+
+                    </option>
+
+                    <option value="A">
+
+                        Section A
+
+                    </option>
+
+                    <option value="B">
+
+                        Section B
+
+                    </option>
+
+                    <option value="C">
+
+                        Section C
+
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- SUBJECT -->
+
+            <div class="mb-4">
+
+                <label class="form-label">
+
+                    Subject
+
+                </label>
+
+                <select
+                    name="subject"
+                    class="form-select"
+                    required>
+
+                    <option value="" selected disabled>
+
+                        Select Subject
+
+                    </option>
+
+                    <option value="Physics">
+
+                        Physics
+
+                    </option>
+
+                    <option value="Computer Lab">
+
+                        Computer Lab
+
+                    </option>
+
+                    <option value="Punjabi">
+
+                        Punjabi
+
+                    </option>
+
+                    <option value="Computer">
+
+                        Computer
+
+                    </option>
+
+                    <option value="Drugs">
+
+                        Drugs
+
+                    </option>
+
+                    <option value="Mathematics">
+
+                        Mathematics
+
+                    </option>
+
+                </select>
+
+            </div>
+
+
+            <!-- START -->
+
+            <button
+                type="submit"
+                class="start-btn w-100">
+
+                <i class="bi bi-play-circle-fill me-2"></i>
+
+                Start Attendance
+
+                <small class="d-block mt-1 opacity-75">
+
+                    Students will have 60 seconds to respond
+
+                </small>
+
+            </button>
+
         </form>
+
+    </div>
+
+
+    <!-- INFO -->
+
+    <div class="attendance-card status-card">
+
+        <i class="bi bi-info-circle-fill status-icon"></i>
+
+        <h5 class="mt-2 mb-2">
+
+            How Attendance Works
+
+        </h5>
+
+        <p class="text-muted mb-0">
+
+            Start the session and students in the selected
+            class will receive an attendance notification.
+            Students who don't respond within 60 seconds
+            will automatically be marked absent.
+
+        </p>
 
     </div>
 

@@ -1,81 +1,248 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
 
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Add Student</title>
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+        rel="stylesheet">
 
 </head>
 
 <body class="bg-light">
 
-<div class="container mt-5">
+<div class="container py-5">
 
-<div class="card p-4">
+    <div class="card shadow-lg mx-auto" style="max-width:700px;">
 
-<h2>Add Student</h2>
+        <div class="card-header bg-primary text-white text-center">
 
-<form action="/add-student" method="POST">
+            <h2>Add Student</h2>
 
-<div class="mb-3">
+        </div>
 
-<label>Name</label>
+        <div class="card-body">
 
-<input type="text" name="name" class="form-control" required>
+            <form action="/add-student" method="POST">
 
-</div>
+                <div class="row">
 
-<div class="mb-3">
+                    <!-- Name -->
+                    <div class="col-md-6 mb-3">
 
-<label>Roll Number</label>
+                        <label class="form-label">
+                            Name
+                        </label>
 
-<input type="text" name="rollNo" class="form-control" required>
+                        <input
+                            type="text"
+                            class="form-control"
+                            name="name"
+                            required>
 
-</div>
+                    </div>
 
-<div class="mb-3">
 
-<label>Semester</label>
+                    <!-- Roll Number -->
+                    <div class="col-md-6 mb-3">
 
-<input type="number" name="semester" class="form-control" required>
+                        <label class="form-label">
+                            Roll Number
+                        </label>
 
-</div>
+                        <input
+                            type="text"
+                            class="form-control"
+                            name="rollNo"
+                            required>
 
-<div class="mb-3">
+                    </div>
 
-<label>Department</label>
 
-<input type="text" name="department" class="form-control" required>
+                    <!-- Department -->
+                    <div class="col-md-6 mb-3">
 
-</div>
+                        <label class="form-label">
+                            Department
+                        </label>
 
-<div class="mb-3">
+                        <select
+                            class="form-select"
+                            name="department"
+                            required>
 
-<label>Email</label>
+                            <option value="">
+                                Select Department
+                            </option>
 
-<input type="email" name="email" class="form-control" required>
+                            <option value="BSc Computer Science">
+                                B.Sc Computer Science
+                            </option>
 
-</div>
+                            <option value="BSc">
+                                B.Sc
+                            </option>
 
-<div class="mb-3">
+                            <option value="BA">
+                                B.A.
+                            </option>
 
-<label>Password</label>
+                            <option value="BCom">
+                                B.Com
+                            </option>
 
-<input type="password" name="password" class="form-control" required>
+                            <option value="BCA">
+                                BCA
+                            </option>
 
-</div>
+                            <option value="BSc IT">
+                                B.Sc IT
+                            </option>
+                            <option value="BSc Medical">
+                                B.Sc Medical
+                            </option>
 
-<button class="btn btn-primary">
+                        </select>
 
-Add Student
+                    </div>
 
-</button>
 
-</form>
+                    <!-- Semester -->
+                    <div class="col-md-6 mb-3">
 
-</div>
+                        <label class="form-label">
+                            Semester
+                        </label>
+
+                        <select
+                            class="form-select"
+                            name="semester"
+                            required>
+
+                            <option value="">
+                                Select Semester
+                            </option>
+
+                            <option value="1">
+                                Semester 1
+                            </option>
+
+                            <option value="2">
+                                Semester 2
+                            </option>
+
+                            <option value="3">
+                                Semester 3
+                            </option>
+
+                            <option value="4">
+                                Semester 4
+                            </option>
+
+                            <option value="5">
+                                Semester 5
+                            </option>
+
+                            <option value="6">
+                                Semester 6
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- Section -->
+                    <div class="col-md-6 mb-3">
+
+                        <label class="form-label">
+                            Section
+                        </label>
+
+                        <select
+                            class="form-select"
+                            name="section"
+                            required>
+
+                            <option value="">
+                                Select Section
+                            </option>
+
+                            <option value="A">
+                                Section A
+                            </option>
+
+                            <option value="B">
+                                Section B
+                            </option>
+
+                            <option value="C">
+                                Section C
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <!-- Email -->
+                    <div class="col-md-6 mb-3">
+
+                        <label class="form-label">
+                            Email
+                        </label>
+
+                        <input
+                            type="email"
+                            class="form-control"
+                            name="email"
+                            required>
+
+                    </div>
+
+
+                    <!-- Password -->
+                    <div class="col-md-6 mb-3">
+
+                        <label class="form-label">
+                            Password
+                        </label>
+
+                        <input
+                            type="password"
+                            class="form-control"
+                            name="password"
+                            required>
+
+                    </div>
+
+
+                    <!-- Button -->
+                    <div class="col-12">
+
+                        <button
+                            type="submit"
+                            class="btn btn-primary w-100">
+
+                            Add Student
+
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+    </div>
 
 </div>
 

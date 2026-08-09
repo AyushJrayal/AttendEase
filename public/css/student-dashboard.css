@@ -1,337 +1,246 @@
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:Poppins,sans-serif;
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
 }
 
-body{
-
-background:#eef2f7;
-
-display:flex;
-
-justify-content:center;
-
+body {
+    background: #eef2f7;
+    color: #222;
 }
 
-.phone{
 
-max-width:420px;
+/* Main mobile container */
 
-width:100%;
-
-min-height:100vh;
-
-background:#f8f9fa;
-
-padding:20px 20px 90px;
-
+.profile-page {
+    width: 100%;
+    max-width: 420px;
+    min-height: 100vh;
+    margin: auto;
+    background: #f8f9fa;
+    padding: 25px 18px 35px;
 }
 
-.top h2{
 
-color:#0E6B3F;
+/* Header */
 
-font-weight:700;
-
+.profile-header {
+    text-align: center;
+    margin-bottom: 25px;
 }
 
-.top p{
+.profile-icon {
+    width: 75px;
+    height: 75px;
+    margin: 0 auto 12px;
 
-color:#777;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-margin-bottom:25px;
+    background: #0e6b3f;
+    color: white;
 
+    border-radius: 50%;
+
+    font-size: 36px;
 }
 
-.top{
-
-text-align:center;
-
-margin-bottom:25px;
-
+.profile-header h1 {
+    font-size: 25px;
+    font-weight: 700;
+    color: #0b5d3b;
+    word-break: break-word;
 }
 
-.university-logo{
-
-width:85px;
-
-height:85px;
-
-object-fit:contain;
-
-margin-bottom:15px;
-
+.profile-header p {
+    margin-top: 5px;
+    color: #777;
+    font-size: 14px;
 }
 
-.top h1{
-
-font-size:30px;
-
-font-weight:700;
-
-color:#0B5D3B;
-
-margin-bottom:8px;
-
+.profile-header p span {
+    margin: 0 5px;
+    color: #aaa;
 }
 
-.top h3{
 
-font-size:18px;
+/* Cards */
 
-font-weight:500;
+.profile-card {
+    background: white;
+    border-radius: 18px;
+    padding: 18px;
+    margin-bottom: 16px;
 
-color:#555;
-
-margin-bottom:5px;
-
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
 }
 
-.top h2{
+.profile-card h2 {
+    font-size: 17px;
+    font-weight: 600;
+    color: #0b5d3b;
 
-font-size:24px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 
-font-weight:700;
-
-color:#222;
-
-margin-bottom:8px;
-
+    margin-bottom: 15px;
 }
 
-.top p{
 
-font-size:14px;
+/* Information rows */
 
-color:#777;
+.profile-row {
+    display: flex;
+    align-items: center;
 
+    gap: 12px;
+
+    padding: 13px 0;
+
+    border-bottom: 1px solid #edf0f2;
 }
 
-.attendance-card{
-
-background:linear-gradient(135deg,#0B5D3B,#15803D);
-
-color:white;
-
-padding:25px;
-
-border-radius:25px;
-
-box-shadow:0 10px 25px rgba(0,0,0,.15);
-
-margin-bottom:25px;
-
+.profile-row:last-child {
+    border-bottom: none;
+    padding-bottom: 2px;
 }
 
-.attendance-card h4{
+.row-icon {
+    width: 40px;
+    height: 40px;
 
-font-size:18px;
+    flex-shrink: 0;
 
-font-weight:500;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-opacity:.9;
+    background: #e8f5ee;
+    color: #0e6b3f;
 
+    border-radius: 12px;
+
+    font-size: 19px;
 }
 
-.attendance-card h1{
-
-font-size:55px;
-
-font-weight:700;
-
-margin:15px 0;
-
-text-align:center;
-
+.profile-row small {
+    display: block;
+    color: #888;
+    font-size: 12px;
+    margin-bottom: 2px;
 }
 
-.progress{
+.profile-row strong {
+    display: block;
+    color: #222;
+    font-size: 14px;
+    font-weight: 600;
 
-height:14px;
-
-background:rgba(255,255,255,.3);
-
-border-radius:20px;
-
-overflow:hidden;
-
-margin-top:20px;
-
+    word-break: break-word;
 }
 
-.progress-fill{
 
-height:100%;
+/* Account status */
 
-background:white;
+.account-status {
+    display: flex;
+    align-items: center;
+    gap: 12px;
 
-border-radius:20px;
+    background: #edf8f2;
 
+    border-radius: 12px;
+
+    padding: 13px;
 }
 
-.stats{
-
-display:flex;
-
-justify-content:space-between;
-
-text-align:center;
-
-margin-top:20px;
-
+.account-status > i {
+    color: #0e6b3f;
+    font-size: 23px;
 }
 
-.menu{
-
-display:grid;
-
-grid-template-columns:repeat(2,1fr);
-
-gap:15px;
-
-margin-top:20px;
-
+.account-status strong {
+    display: block;
+    color: #0b5d3b;
+    font-size: 14px;
 }
 
-.menu-card{
-
-background:white;
-
-border-radius:20px;
-
-padding:25px;
-
-text-decoration:none;
-
-color:#222;
-
-display:flex;
-
-flex-direction:column;
-
-align-items:center;
-
-box-shadow:0 5px 20px rgba(0,0,0,.06);
-
-transition:.3s;
-
+.account-status small {
+    display: block;
+    color: #777;
+    font-size: 12px;
+    margin-top: 2px;
 }
 
-.menu-card:hover{
 
-transform:translateY(-5px);
+/* Back button */
 
+.back-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    width: 100%;
+
+    padding: 14px;
+
+    background: #0e6b3f;
+    color: white;
+
+    border-radius: 14px;
+
+    text-decoration: none;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    margin-top: 5px;
+
+    transition: 0.2s;
 }
 
-.menu-card i{
-
-font-size:30px;
-
-color:#0E6B3F;
-
-margin-bottom:10px;
-
+.back-button:hover {
+    background: #09542f;
+    color: white;
 }
 
-.credit{
 
-margin-top:35px;
+/* Footer */
 
-text-align:center;
+.profile-footer {
+    text-align: center;
 
-font-size:13px;
+    margin-top: 25px;
 
-color:#666;
+    color: #999;
 
-line-height:22px;
-
+    font-size: 11px;
 }
 
-.bottom-nav{
 
-position:fixed;
+/* Small phones */
 
-bottom:0;
+@media (max-width: 360px) {
 
-left:50%;
+    .profile-page {
+        padding: 20px 14px 30px;
+    }
 
-transform:translateX(-50%);
+    .profile-header h1 {
+        font-size: 22px;
+    }
 
-width:100%;
+    .profile-card {
+        padding: 15px;
+    }
 
-max-width:420px;
-
-display:flex;
-
-justify-content:space-around;
-
-background:white;
-
-padding:12px 0;
-
-border-top-left-radius:25px;
-
-border-top-right-radius:25px;
-
-box-shadow:0 -5px 15px rgba(0,0,0,.1);
-
-}
-
-.bottom-nav a{
-
-text-decoration:none;
-
-color:#888;
-
-text-align:center;
-
-font-size:13px;
-
-}
-
-.bottom-nav i{
-
-font-size:22px;
-
-display:block;
-
-margin-bottom:5px;
-
-}
-
-.bottom-nav .active{
-
-color:#0E6B3F;
-
-font-weight:600;
-
-}
-.attendance-popup{
-
-display:none;
-
-position:absolute;
-
-top:100px;
-
-left:20px;
-
-right:20px;
-
-background:white;
-
-padding:20px;
-
-border-radius:20px;
-
-box-shadow:0 15px 35px rgba(0,0,0,.25);
-
-text-align:center;
-
-z-index:999;
-
-animation:popup .35s;
-
+    .profile-row strong {
+        font-size: 13px;
+    }
 }

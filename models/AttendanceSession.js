@@ -12,6 +12,16 @@ const attendanceSessionSchema = new mongoose.Schema({
         required: true
     },
 
+    section: {
+        type: String,
+        required: true
+    },
+
+    subject: {
+        type: String,
+        required: true
+    },
+
     date: {
         type: String,
         required: true
@@ -23,11 +33,13 @@ const attendanceSessionSchema = new mongoose.Schema({
     },
 
     startTime: {
-        type: Date
+        type: Date,
+        required: true
     },
 
     endTime: {
-        type: Date
+        type: Date,
+        required: true
     }
 
 });
@@ -35,4 +47,4 @@ const attendanceSessionSchema = new mongoose.Schema({
 module.exports = mongoose.model(
     "AttendanceSession",
     attendanceSessionSchema
-);
+ );

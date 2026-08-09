@@ -1,73 +1,376 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
 
-    <title>My Attendance</title>
+    <meta charset="UTF-8">
 
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>My Attendance | AttendEase</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+        rel="stylesheet">
+
+    <link
+        rel="stylesheet"
+        href="/css/student-attendance.css">
 
 </head>
 
-<body class="bg-light">
+<body>
 
-<div class="container mt-5">
+<div class="attendance-page">
 
-    <h2>Welcome, <%= student.name %></h2>
+    <!-- HEADER -->
 
-    <h4 class="mb-4">My Attendance History</h4>
+    <div class="attendance-header">
 
-    <table class="table table-bordered">
+        <a
+            href="/student-dashboard"
+            class="back-btn">
 
-        <thead class="table-dark">
+            <i class="bi bi-arrow-left"></i>
 
-            <tr>
+        </a>
 
-                <th>Date</th>
+        <div class="header-logo">
 
-                <th>Status</th>
+            <img
+                src="/images/university-logo.jpg"
+                alt="University Logo">
 
-            </tr>
+        </div>
 
-        </thead>
+        <h1>My Attendance</h1>
 
-        <tbody>
+        <p>
+            Welcome, <strong><%= student.name %></strong>
+        </p>
 
-        <% attendance.forEach(record => { %>
+    </div>
 
-            <tr>
 
-                <td><%= new Date(record.date).toLocaleDateString() %></td>
+    <!-- ATTENDANCE CARD -->
 
-                <td>
+    <div class="attendance-card">
+
+        <div class="card-title">
+
+            <div>
+
+                <h2>Attendance History</h2>
+
+                <p>
+                    View your complete attendance record
+                </p>
+
+            </div>
+
+            <div class="history-icon">
+
+                <i class="bi bi-calendar-check-fill"></i>
+
+            </div>
+
+        </div>
+
+
+        <!-- SEARCH -->
+
+        <div class="search-box">
+
+            <i class="bi bi-search"></i>
+
+            <input
+                type="text"
+                id="attendanceSearch"
+                placeholder="Search by date or status...">
+
+        </div>
+
+
+        <!-- DESKTOP TABLE -->
+
+        <div class="table-responsive attendance-table-wrapper">
+
+            <table class="attendance-table">
+
+                <thead>
+
+                    <tr>
+
+                        <th>
+                            <i class="bi bi-calendar3"></i>
+                            Date
+                        </th>
+
+                        <th>
+                            <i class="bi bi-check-circle"></i>
+                            Status
+                        </th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody id="attendanceTableBody">
+
+                <% attendance.forEach(record => { %>
+
+                    <tr>
+
+                        <td>
+
+                            <%= new Date(record.date).toLocaleDateString(
+                                'en-IN',
+                                {
+                                    day: '2-digit',
+                                    month: 'short',
+                                    year: 'numeric'
+                                }
+                            ) %>
+
+                        </td>
+
+                        <td>
+
+                            <% if(record.present){ %>
+
+                                <span class="status present">
+
+                                    <i class="bi bi-check-circle-fill"></i>
+
+                                    Present
+
+                                </span>
+
+                            <% } else { %>
+
+                                <span class="status absent">
+
+                                    <i class="bi bi-x-circle-fill"></i>
+
+                                    Absent
+
+                                </span>
+
+                            <% } %>
+
+                        </td>
+
+                    </tr>
+
+                <% }) %>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+
+        <!-- MOBILE ATTENDANCE CARDS -->
+
+        <div
+            class="mobile-attendance-list"
+            id="mobileAttendanceList">
+
+            <% attendance.forEach(record => { %>
+
+                <div class="attendance-item">
+
+                    <div class="date-section">
+
+                        <div class="date-icon">
+
+                            <i class="bi bi-calendar-event"></i>
+
+                        </div>
+
+                        <div>
+
+                            <small>Date</small>
+
+                            <strong>
+
+                                <%= new Date(record.date).toLocaleDateString(
+                                    'en-IN',
+                                    {
+                                        day: '2-digit',
+                                        month: 'short',
+                                        year: 'numeric'
+                                    }
+                                ) %>
+
+                            </strong>
+
+                        </div>
+
+                    </div>
+
 
                     <% if(record.present){ %>
 
-                        <span class="badge bg-success">Present</span>
+                        <span class="status present">
+
+                            <i class="bi bi-check-circle-fill"></i>
+
+                            Present
+
+                        </span>
 
                     <% } else { %>
 
-                        <span class="badge bg-danger">Absent</span>
+                        <span class="status absent">
+
+                            <i class="bi bi-x-circle-fill"></i>
+
+                            Absent
+
+                        </span>
 
                     <% } %>
 
-                </td>
+                </div>
 
-            </tr>
+            <% }) %>
 
-        <% }) %>
+        </div>
 
-        </tbody>
 
-    </table>
+        <!-- NO RESULTS -->
 
-    <a href="/student-dashboard" class="btn btn-primary">
+        <div
+            id="noResults"
+            class="no-results">
 
-        Back
+            <i class="bi bi-search"></i>
+
+            <h3>No attendance found</h3>
+
+            <p>
+                Try searching with another date or status.
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <!-- BACK BUTTON -->
+
+    <a
+        href="/student-dashboard"
+        class="dashboard-btn">
+
+        <i class="bi bi-house-fill"></i>
+
+        Back to Dashboard
 
     </a>
 
+
+    <!-- FOOTER -->
+
+    <div class="page-footer">
+
+        Powered by <strong>JC Studio</strong>
+
+        <br>
+
+        Developed by <strong>Ayush Jaryal</strong>
+
+        <br>
+
+        🌐 Jaryal.shop
+
+    </div>
+
 </div>
+
+
+<script>
+
+const searchInput =
+    document.getElementById("attendanceSearch");
+
+const tableRows =
+    document.querySelectorAll("#attendanceTableBody tr");
+
+const mobileItems =
+    document.querySelectorAll(".attendance-item");
+
+const noResults =
+    document.getElementById("noResults");
+
+
+searchInput.addEventListener("input", function () {
+
+    const searchValue =
+        this.value.toLowerCase().trim();
+
+    let found = false;
+
+
+    /* DESKTOP TABLE */
+
+    tableRows.forEach(row => {
+
+        const text =
+            row.innerText.toLowerCase();
+
+        if (text.includes(searchValue)) {
+
+            row.style.display = "";
+
+            found = true;
+
+        } else {
+
+            row.style.display = "none";
+
+        }
+
+    });
+
+
+    /* MOBILE CARDS */
+
+    mobileItems.forEach(item => {
+
+        const text =
+            item.innerText.toLowerCase();
+
+        if (text.includes(searchValue)) {
+
+            item.style.display = "flex";
+
+            found = true;
+
+        } else {
+
+            item.style.display = "none";
+
+        }
+
+    });
+
+
+    noResults.style.display =
+        found ? "none" : "block";
+
+});
+
+</script>
+
 
 </body>
 

@@ -18,16 +18,20 @@ const studentSchema = new mongoose.Schema({
         unique: true
     },
 
-    semester: {
-        type: Number,
-        required: true
-    },
+ semester: {
+    type: Number,
+    required: true
+},
 
-    department: {
-        type: String,
-        required: true
-    },
+section: {
+    type: String,
+    required: true
+},
 
+department: {
+    type: String,
+    required: true
+},
     mobile: {
         type: String,
         required: true

@@ -15,7 +15,11 @@
 
 </head>
 
-<body>
+<body
+    data-department="<%= student.department %>"
+    data-semester="<%= student.semester %>"
+    data-section="<%= student.section %>"
+>
 
 <div class="phone">
 
@@ -133,9 +137,9 @@ Attendance Percentage
 
 <a href="#" class="menu-card">
 
-<i class="bi bi-bar-chart"></i>
+<i class="bi bi-heart-fill"></i>
 
-<span>Progress</span>
+<span>Coming Soon..</span>
 
 </a>
 
@@ -169,6 +173,14 @@ document.querySelectorAll(".progress-fill").forEach(bar => {
 <script>
 
 const socket = io();
+
+const studentData = document.body.dataset;
+
+socket.emit("studentJoin", {
+    department: studentData.department,
+    semester: Number(studentData.semester),
+    section: studentData.section
+});
 
 socket.on("attendanceStarted", (data) => {
 
