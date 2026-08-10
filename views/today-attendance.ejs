@@ -654,9 +654,18 @@
    Clean portrait / mobile-friendly design
 ========================================================= */
 
+/* =========================================================
+   ATTENDEASE DOWNLOAD SHEET
+   Professional mobile portrait attendance sheet
+========================================================= */
+
 .download-sheet {
-    width: 1080px;
-    height: 1350px;
+    width: 900px;
+    height: 1600px;
+
+    position: fixed;
+    left: -20000px;
+    top: 0;
 
     background: #ffffff;
     color: #202520;
@@ -668,10 +677,6 @@
 
     overflow: hidden;
 
-    position: fixed;
-    left: -20000px;
-    top: 0;
-
     visibility: visible;
     z-index: -1;
 }
@@ -682,56 +687,39 @@
 ========================================================= */
 
 .sheet-header {
-
-    padding:
-        55px
-        65px
-        30px;
-
-    background: #ffffff;
+    padding: 55px 60px 28px;
 }
 
 .sheet-brand {
-
     display: flex;
-
     align-items: center;
-
-    gap: 22px;
-
-    min-width: 0;
+    gap: 20px;
 }
 
 .sheet-dragon {
-
-    width: 90px;
-    height: 90px;
+    width: 78px;
+    height: 78px;
 
     object-fit: contain;
 
-    flex: 0 0 90px;
+    flex: 0 0 78px;
 }
 
 .sheet-brand-text {
-
     min-width: 0;
-
-    overflow: hidden;
 }
 
 .sheet-title {
-
     margin: 0;
 
-    color: #0B5D3B;
+    color: #0b5d3b;
 
     font-family:
         Georgia,
         "Times New Roman",
         serif;
 
-    font-size: 48px;
-
+    font-size: 46px;
     line-height: 1.05;
 
     font-weight: 700;
@@ -740,27 +728,28 @@
 }
 
 .sheet-subtitle {
-
     margin-top: 8px;
 
     color: #777;
 
-    font-size: 17px;
+    font-size: 16px;
 
-    letter-spacing: 1.4px;
+    letter-spacing: 1.8px;
 
     text-transform: uppercase;
 
     white-space: nowrap;
 }
 
-.sheet-label {
 
-    margin-top: 38px;
+/* REPORT TITLE */
+
+.sheet-label {
+    margin-top: 45px;
 
     color: #333;
 
-    font-size: 19px;
+    font-size: 20px;
 
     font-weight: 700;
 
@@ -771,32 +760,26 @@
 
 
 /* =========================================================
-   GREEN DIVIDER
+   SIMPLE GREEN LINE
 ========================================================= */
 
 .sheet-line {
-
-    display: block;
-
     height: 3px;
 
-    margin:
-        0
-        65px;
+    margin: 0 60px;
 
-    background: #0B5D3B;
+    background: #0b5d3b;
 }
 
 
 /* =========================================================
-   CLASS INFORMATION
+   CLASS / SUBJECT / DATE / TIME
 ========================================================= */
 
 .sheet-info {
-
     margin:
         30px
-        65px
+        60px
         0;
 
     padding:
@@ -807,12 +790,12 @@
     display: grid;
 
     grid-template-columns:
-        1fr
+        1.6fr
         1fr;
 
-    column-gap: 55px;
+    column-gap: 60px;
 
-    row-gap: 25px;
+    row-gap: 26px;
 
     border-bottom:
         1px solid
@@ -820,15 +803,13 @@
 }
 
 .sheet-info > div {
-
     min-width: 0;
 }
 
 .sheet-info strong {
-
     display: block;
 
-    margin-bottom: 6px;
+    margin-bottom: 7px;
 
     color: #777;
 
@@ -836,22 +817,21 @@
 
     font-weight: 700;
 
-    letter-spacing: 1.2px;
+    letter-spacing: 1.5px;
 
     text-transform: uppercase;
 }
 
 .sheet-info span {
-
     display: block;
 
     color: #222;
 
-    font-size: 21px;
+    font-size: 22px;
 
     font-weight: 600;
 
-    line-height: 1.25;
+    line-height: 1.3;
 
     white-space: nowrap;
 
@@ -866,18 +846,58 @@
 ========================================================= */
 
 .sheet-students {
+    position: relative;
 
-    margin-top: 30px;
+    margin-top: 35px;
 }
 
+
+/* =========================================================
+   VERY LIGHT DRAGON WATERMARK
+========================================================= */
+
+.sheet-students::before {
+    content: "";
+
+    position: absolute;
+
+    width: 520px;
+    height: 520px;
+
+    left: 50%;
+    top: 180px;
+
+    transform: translateX(-50%);
+
+    background-image:
+        url("/images/dragon-logo.png");
+
+    background-repeat: no-repeat;
+
+    background-position: center;
+
+    background-size: contain;
+
+    opacity: 0.2;
+
+    pointer-events: none;
+}
+
+
+/* =========================================================
+   TABLE HEADER
+========================================================= */
+
 .sheet-table-head {
+    position: relative;
+    z-index: 2;
 
     display: grid;
 
     grid-template-columns:
         150px
         minmax(0, 1fr)
-        170px;
+        150px;
 
     align-items: center;
 
@@ -885,9 +905,9 @@
 
     padding:
         0
-        65px;
+        60px;
 
-    background: #0B5D3B;
+    background: #0b5d3b;
 
     color: #ffffff;
 
@@ -901,12 +921,10 @@
 }
 
 .sheet-table-head > div {
-
     min-width: 0;
 }
 
 .sheet-table-head > div:last-child {
-
     text-align: right;
 }
 
@@ -916,48 +934,48 @@
 ========================================================= */
 
 .sheet-student {
+    position: relative;
+    z-index: 2;
 
     display: grid;
 
     grid-template-columns:
         150px
         minmax(0, 1fr)
-        170px;
+        150px;
 
     align-items: center;
 
-    min-height: 66px;
+    min-height: 68px;
 
     padding:
         0
-        65px;
+        60px;
 
     border-bottom:
         1px solid
-        #e5e5e5;
+        #e3e3e3;
 
     font-size: 19px;
+
+    background: rgba(255,255,255,.96);
 }
 
 .sheet-student:nth-child(even) {
-
-    background: #fafafa;
+    background: rgba(250,250,250,.96);
 }
 
 .sheet-student > div {
-
     min-width: 0;
 }
 
 .sheet-roll {
-
     color: #555;
 
     font-weight: 600;
 }
 
 .sheet-name {
-
     padding-right: 20px;
 
     color: #222;
@@ -972,7 +990,6 @@
 }
 
 .sheet-student > div:last-child {
-
     text-align: right;
 }
 
@@ -983,16 +1000,13 @@
 
 .sheet-present,
 .sheet-absent {
-
     display: inline-flex;
 
     align-items: center;
-
     justify-content: center;
 
     width: 118px;
-
-    height: 32px;
+    height: 34px;
 
     border-radius: 5px;
 
@@ -1004,7 +1018,6 @@
 }
 
 .sheet-present {
-
     color: #176b3a;
 
     background: #edf7f0;
@@ -1015,7 +1028,6 @@
 }
 
 .sheet-absent {
-
     color: #a33a3a;
 
     background: #fbefef;
@@ -1031,14 +1043,14 @@
 ========================================================= */
 
 .sheet-footer {
-
     position: absolute;
 
-    left: 65px;
-    right: 65px;
-    bottom: 42px;
+    left: 60px;
+    right: 60px;
 
-    padding-top: 18px;
+    bottom: 45px;
+
+    padding-top: 20px;
 
     border-top:
         1px solid
@@ -1048,14 +1060,13 @@
 
     color: #888;
 
-    font-size: 13px;
+    font-size: 14px;
 
-    line-height: 23px;
+    line-height: 25px;
 }
 
 .sheet-footer strong {
-
-    color: #0B5D3B;
+    color: #0b5d3b;
 
     font-weight: 600;
 }
