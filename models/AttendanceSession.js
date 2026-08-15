@@ -4,22 +4,27 @@ const attendanceSessionSchema = new mongoose.Schema({
 
     department: {
         type: String,
-        required: true
+        required: false
     },
 
     semester: {
         type: Number,
-        required: true
+        required: false
     },
 
     section: {
         type: String,
-        required: true
+        required: false
     },
 
     subject: {
         type: String,
         required: true
+    },
+
+    isGlobal: {
+        type: Boolean,
+        default: false
     },
 
     date: {
@@ -47,4 +52,4 @@ const attendanceSessionSchema = new mongoose.Schema({
 module.exports = mongoose.model(
     "AttendanceSession",
     attendanceSessionSchema
- );
+);

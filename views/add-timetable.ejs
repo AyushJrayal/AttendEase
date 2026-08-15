@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add Timetable Entry • AttendEase</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{ --green:#1b7a43; --green-dark:#125c31; --gray-bg:#f1f2f5; --line:#e6e7eb; }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:#eef2f7; font-family:'Poppins', sans-serif; }
+  .wrap{ max-width:480px; margin:30px auto; padding:0 15px; }
+  .card{ background:#fff; border-radius:18px; padding:20px; box-shadow:0 4px 14px rgba(0,0,0,.06); }
+  h2{ margin:0 0 16px; font-size:20px; color:var(--green-dark); }
+  label{ font-size:12px; font-weight:600; color:#6b7280; display:block; margin:12px 0 5px; }
+  select, input{
+    width:100%; padding:10px 12px; border-radius:10px;
+    border:1.5px solid var(--line); background:var(--gray-bg);
+    font-family:'Poppins', sans-serif; font-size:14px;
+  }
+  button{
+    width:100%; margin-top:18px; padding:12px; border:none;
+    border-radius:10px; background:var(--green); color:#fff;
+    font-weight:600; font-size:14px;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="card">
+    <h2>Add Timetable Entry</h2>
+
+    <form action="/add-timetable" method="POST">
+
+      <label>Department</label>
+      <select name="department" required>
+        <option value="BSc Computer Science">B.Sc Computer Science</option>
+        <option value="BSc IT">B.Sc IT</option>
+        <option value="BCA">BCA</option>
+        <option value="BA">B.A</option>
+        <option value="BCom">B.Com</option>
+        <option value="BSc">B.Sc</option>
+        <option value="BSc Medical">B.Sc Medical</option>
+        <option value="B.Sc Economics">B.Sc Economics</option>
+        <option value="B.Voc (Software Development)">B.Voc (Software Development)</option>
+        <option value="BBA">BBA</option>
+      </select>
+
+      <label>Semester</label>
+      <select name="semester" required>
+        <option value="1">1st Semester</option>
+        <option value="2">2nd Semester</option>
+        <option value="3">3rd Semester</option>
+        <option value="4">4th Semester</option>
+        <option value="5">5th Semester</option>
+        <option value="6">6th Semester</option>
+      </select>
+
+      <label>Day</label>
+      <select name="day" required>
+        <option value="Mon">Monday</option>
+        <option value="Tue">Tuesday</option>
+        <option value="Wed">Wednesday</option>
+        <option value="Thu">Thursday</option>
+        <option value="Fri">Friday</option>
+        <option value="Sat">Saturday</option>
+      </select>
+
+      <label>Period Number</label>
+      <input type="number" name="period" min="1" max="8" required>
+
+<label>Time</label>
+<input type="text" name="time" placeholder="e.g. 9-10">
+
+      <label>Subject</label>
+      <input type="text" name="subject" placeholder="e.g. Punjabi (MR)" required>
+
+      <label>Room</label>
+      <input type="text" name="room" placeholder="e.g. CR6">
+
+      <label>Effective From</label>
+      <input type="text" name="effectiveFrom" placeholder="e.g. 20.07.2026">
+
+      <button type="submit">Add Entry</button>
+
+    </form>
+  </div>
+</div>
+
+</body>
+</html>

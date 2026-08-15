@@ -359,300 +359,6 @@
             }
 
         }
-        
-        /* =========================================
-   ATTENDEASE MOBILE EXPORT SHEET
-   Used only for the downloaded PNG
-========================================= */
-
-.export-sheet {
-    position: absolute;
-    left: -10000px;
-    top: 0;
-
-    width: 430px;
-
-    background: #ffffff;
-    color: #1f2937;
-
-    padding: 22px;
-
-    font-family: Arial, sans-serif;
-}
-
-.export-header {
-    background: linear-gradient(
-        135deg,
-        #0B5D3B,
-        #15803D
-    );
-
-    color: white;
-
-    border-radius: 22px;
-
-    padding: 24px 18px;
-
-    text-align: center;
-
-    margin-bottom: 16px;
-}
-
-.export-logo {
-    width: 78px;
-    height: 78px;
-
-    object-fit: contain;
-
-    background: white;
-
-    padding: 6px;
-
-    border-radius: 18px;
-
-    margin-bottom: 10px;
-}
-
-.export-brand {
-    margin: 0;
-
-    font-size: 30px;
-
-    font-weight: 800;
-}
-
-.export-subtitle {
-    margin-top: 3px;
-
-    font-size: 13px;
-
-    opacity: .9;
-}
-
-.export-title {
-    margin-top: 18px;
-
-    font-size: 21px;
-
-    font-weight: 700;
-}
-
-.export-info {
-    background: #f5f7f8;
-
-    border-radius: 18px;
-
-    padding: 15px;
-
-    margin-bottom: 15px;
-}
-
-.export-info-row {
-    display: flex;
-
-    justify-content: space-between;
-
-    gap: 15px;
-
-    padding: 8px 0;
-
-    border-bottom: 1px solid #e5e7eb;
-}
-
-.export-info-row:last-child {
-    border-bottom: none;
-}
-
-.export-label {
-    color: #6b7280;
-
-    font-size: 12px;
-}
-
-.export-value {
-    color: #1f2937;
-
-    font-size: 13px;
-
-    font-weight: 700;
-
-    text-align: right;
-}
-
-.export-stats {
-    display: flex;
-
-    gap: 8px;
-
-    margin-bottom: 18px;
-}
-
-.export-stat {
-    flex: 1;
-
-    background: #f5f7f8;
-
-    border-radius: 15px;
-
-    padding: 13px 5px;
-
-    text-align: center;
-}
-
-.export-stat-number {
-    font-size: 23px;
-
-    font-weight: 800;
-}
-
-.export-stat-label {
-    margin-top: 3px;
-
-    font-size: 10px;
-
-    color: #6b7280;
-}
-
-.export-present {
-    color: #15803d;
-}
-
-.export-absent {
-    color: #dc2626;
-}
-
-.export-students-title {
-    font-size: 16px;
-
-    font-weight: 700;
-
-    color: #0B5D3B;
-
-    margin-bottom: 8px;
-}
-
-.export-student {
-    display: flex;
-
-    align-items: center;
-
-    gap: 9px;
-
-    padding: 12px 6px;
-
-    border-bottom: 1px solid #e5e7eb;
-}
-
-.export-number {
-    width: 25px;
-
-    color: #777;
-
-    font-size: 11px;
-
-    text-align: center;
-}
-
-.export-student-info {
-    flex: 1;
-
-    min-width: 0;
-}
-
-.export-student-name {
-    font-size: 13px;
-
-    font-weight: 700;
-}
-
-.export-roll {
-    margin-top: 2px;
-
-    color: #777;
-
-    font-size: 10px;
-}
-
-.export-status {
-    text-align: right;
-
-    min-width: 70px;
-}
-
-.export-present-badge,
-.export-absent-badge {
-    display: inline-block;
-
-    padding: 5px 8px;
-
-    border-radius: 50px;
-
-    font-size: 9px;
-
-    font-weight: 700;
-}
-
-.export-present-badge {
-    background: #dcfce7;
-
-    color: #166534;
-}
-
-.export-absent-badge {
-    background: #fee2e2;
-
-    color: #991b1b;
-}
-
-.export-time {
-    margin-top: 3px;
-
-    color: #777;
-
-    font-size: 9px;
-}
-
-.export-footer {
-    margin-top: 22px;
-
-    padding-top: 15px;
-
-    border-top: 1px solid #e5e7eb;
-
-    text-align: center;
-
-    color: #777;
-
-    font-size: 10px;
-
-    line-height: 18px;
-}
-
-.export-footer .brand {
-    color: #0B5D3B;
-
-    font-size: 13px;
-
-    font-weight: 800;
-}
-
-.export-footer strong {
-    color: #0B5D3B;
-}
-
-/* =====================================================
-   CLASSIC ATTENDANCE SHEET
-===================================================== */
-
-/* =========================================================
-   ATTENDEASE DOWNLOADABLE ATTENDANCE SHEET
-   Clean portrait / mobile-friendly design
-========================================================= */
-
-/* =========================================================
-   ATTENDEASE DOWNLOADABLE ATTENDANCE SHEET
-   Clean portrait / mobile-friendly design
-========================================================= */
 
 /* =========================================================
    ATTENDEASE DOWNLOAD SHEET
@@ -663,10 +369,6 @@
     width: 900px;
     height: 1600px;
 
-    position: fixed;
-    left: -20000px;
-    top: 0;
-
     background: #ffffff;
     color: #202520;
 
@@ -676,9 +378,6 @@
         sans-serif;
 
     overflow: hidden;
-
-    visibility: visible;
-    z-index: -1;
 }
 
 
@@ -989,6 +688,15 @@
     white-space: nowrap;
 }
 
+.sheet-class-tag {
+    display: block;
+    margin-top: 3px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #888;
+    white-space: normal;
+}
+
 .sheet-student > div:last-child {
     text-align: right;
 }
@@ -1071,7 +779,19 @@
     font-weight: 600;
 }
 
+.sheet-page-label {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #aaa;
+}
 
+/* Off-screen wrapper used only while html2canvas captures each page */
+.sheet-render-slot {
+    position: fixed;
+    left: -20000px;
+    top: 0;
+    z-index: -1;
+}
 
     </style>
 
@@ -1086,7 +806,7 @@
 
     <!-- BACK -->
 
-    <a
+     <a
         href="/attendance"
         class="back-btn">
 
@@ -1130,58 +850,35 @@
 
     <div class="info-card">
 
-        <div class="row">
+<div class="row">
 
-            <div class="col-6 col-md-3 info-item">
+    <div class="col-6 col-md-3 info-item">
+        <div class="info-label">Department</div>
+        <div class="info-value">
+            <%= session.isGlobal ? "All Departments" : session.department %>
+        </div>
+    </div>
 
-                <div class="info-label">
-                    Department
-                </div>
+    <div class="col-6 col-md-3 info-item">
+        <div class="info-label">Semester</div>
+        <div class="info-value">
+            <%= session.isGlobal ? "All Semesters" : "Semester " + session.semester %>
+        </div>
+    </div>
 
-                <div class="info-value">
-                    <%= session.department %>
-                </div>
+    <div class="col-6 col-md-3 info-item">
+        <div class="info-label">Section</div>
+        <div class="info-value">
+            <%= session.isGlobal ? "All Sections" : "Section " + session.section %>
+        </div>
+    </div>
 
-            </div>
+    <div class="col-6 col-md-3 info-item">
+        <div class="info-label">Subject</div>
+        <div class="info-value"><%= session.subject %></div>
+    </div>
 
-
-            <div class="col-6 col-md-3 info-item">
-
-                <div class="info-label">
-                    Semester
-                </div>
-
-                <div class="info-value">
-                    Semester <%= session.semester %>
-                </div>
-
-            </div>
-
-
-            <div class="col-6 col-md-3 info-item">
-
-                <div class="info-label">
-                    Section
-                </div>
-
-                <div class="info-value">
-                    Section <%= session.section %>
-                </div>
-
-            </div>
-
-
-            <div class="col-6 col-md-3 info-item">
-
-                <div class="info-label">
-                    Subject
-                </div>
-
-                <div class="info-value">
-                    <%= session.subject %>
-                </div>
-
-            </div>
+</div>
 
         </div>
 
@@ -1350,30 +1047,20 @@
 
 
                         <td>
-
-                            <% if (
-                                record.studentId
-                            ) { %>
-
-                                <span
-                                    class="student-name">
-
-                                    <%= record.studentId.name %>
-
-                                </span>
-
-                            <% } else { %>
-
-                                <span
-                                    class="text-danger">
-
-                                    Student Deleted
-
-                                </span>
-
-                            <% } %>
-
-                        </td>
+    <% if (record.studentId) { %>
+        <span class="student-name">
+            <%= record.studentId.name %>
+        </span>
+        <% if (session.isGlobal) { %>
+            <br>
+            <small class="text-muted">
+                <%= record.studentId.department %> · Sem <%= record.studentId.semester %>
+            </small>
+        <% } %>
+    <% } else { %>
+        <span class="text-danger">Student Deleted</span>
+    <% } %>
+</td>
 
 
                         <td>
@@ -1478,312 +1165,296 @@
         </button>
 
         <!-- =========================================
-     DOWNLOADABLE ATTENDANCE SHEET
-     This section is converted into PNG
+     DOWNLOADABLE ATTENDANCE SHEET TEMPLATE
+     JS clones this once per page and fills it in
+     with a chunk of students before capturing it
 ========================================= -->
 
-<div id="downloadSheet" class="download-sheet" >
+<div id="downloadSheetContainer"></div>
 
-    <!-- HEADER -->
+<template id="downloadSheetTemplate">
+    <div class="download-sheet">
 
-    <div class="sheet-header">
+        <!-- HEADER -->
 
-        <div class="sheet-brand">
+        <div class="sheet-header">
 
-            <!-- CHANGE THIS PATH if your dragon logo
-                 has a different filename -->
+            <div class="sheet-brand">
 
-            <img
-                src="/images/university-logo.jpg"
-                class="sheet-dragon"
-                alt="AttendEase Logo">
+                <img
+                    src="/images/university-logo.jpg"
+                    class="sheet-dragon"
+                    alt="AttendEase Logo">
+
+                <div>
+
+                    <div class="sheet-title">
+                        AttendEase
+                    </div>
+
+                    <div class="sheet-subtitle">
+                        Smart Attendance System
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="sheet-label">
+                ATTENDANCE SHEET
+            </div>
+
+        </div>
+
+
+        <!-- GREEN LINE -->
+
+        <div class="sheet-line"></div>
+
+
+        <!-- CLASS INFORMATION -->
+
+        <div class="sheet-info">
 
             <div>
+                <strong>Class</strong>
+                <span class="sheet-class-value"></span>
+            </div>
 
-                <div class="sheet-title">
-                    AttendEase
-                </div>
+            <div>
+                <strong>Subject</strong>
+                <span class="sheet-subject-value"></span>
+            </div>
 
-                <div class="sheet-subtitle">
-                    Smart Attendance System
-                </div>
+            <div>
+                <strong>Date</strong>
+                <span class="sheet-date-value"></span>
+            </div>
 
+            <div>
+                <strong>Time</strong>
+                <span class="sheet-time-value"></span>
             </div>
 
         </div>
 
 
-        <div class="sheet-label">
-            ATTENDANCE SHEET
-        </div>
+        <!-- STUDENT LIST -->
 
-    </div>
+        <div class="sheet-students">
 
-
-    <!-- GREEN LINE -->
-
-    <div class="sheet-line"></div>
-
-
-    <!-- CLASS INFORMATION -->
-
-    <div class="sheet-info">
-
-        <div>
-
-            <strong>Class</strong>
-
-            <span>
-                <%= session.department %>
-                · Semester <%= session.semester %>
-                · Section <%= session.section %>
-            </span>
-
-        </div>
-
-
-        <div>
-
-            <strong>Subject</strong>
-
-            <span>
-                <%= session.subject %>
-            </span>
-
-        </div>
-
-
-        <div>
-
-            <strong>Date</strong>
-
-            <span>
-                <%= session.date %>
-            </span>
-
-        </div>
-
-
-        <div>
-
-            <strong>Time</strong>
-
-            <span>
-
-                <%= new Date(
-                    session.startTime
-                ).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit"
-                }) %>
-
-            </span>
-
-        </div>
-
-    </div>
-
-
-    <!-- STUDENT LIST -->
-
-    <div class="sheet-students">
-
-        <div class="sheet-table-head">
-
-            <span>ROLL NO</span>
-
-            <span>NAME</span>
-
-            <span>STATUS</span>
-
-        </div>
-
-
-        <% attendance.forEach(record => { %>
-
-            <div class="sheet-student">
-
-                <span class="sheet-roll">
-
-                    <% if (record.studentId) { %>
-
-                        <%= record.studentId.rollNo %>
-
-                    <% } else { %>
-
-                        —
-
-                    <% } %>
-
-                </span>
-
-
-                <span class="sheet-name">
-
-                    <% if (record.studentId) { %>
-
-                        <%= record.studentId.name %>
-
-                    <% } else { %>
-
-                        Student Deleted
-
-                    <% } %>
-
-                </span>
-
-
-                <span>
-
-                    <% if (record.present) { %>
-
-                        <span class="sheet-present">
-                            PRESENT
-                        </span>
-
-                    <% } else { %>
-
-                        <span class="sheet-absent">
-                            ABSENT
-                        </span>
-
-                    <% } %>
-
-                </span>
-
+            <div class="sheet-table-head">
+                <span>ROLL NO</span>
+                <span>NAME</span>
+                <span>STATUS</span>
             </div>
 
-        <% }) %>
-
-    </div>
-
-
-    <!-- FOOTER -->
-
-    <div class="sheet-footer">
-
-        <div>
-
-            Generated by <strong>AttendEase</strong>
+            <div class="sheet-student-rows"><!-- filled by JS per page --></div>
 
         </div>
 
 
-        <div>
+        <!-- FOOTER -->
 
-            Made by <strong>Ayush Jaryal</strong>
+        <div class="sheet-footer">
 
-        </div>
+            <div>Generated by <strong>AttendEase</strong></div>
 
+            <div>Made by <strong>Ayush Jaryal</strong></div>
 
-        <div>
+            <div>🌐 <strong>Jaryal.shop</strong></div>
 
-            🌐 <strong>Jaryal.shop</strong>
+            <div class="sheet-page-label"></div>
 
         </div>
 
     </div>
+</template>
 
-</div>
 
     </div>
 
 
 </div>
 
+
+<!-- EJS-rendered data lives here, completely separate from real JS,
+     so VS Code's JavaScript checker never sees <% %> tags -->
+<script type="application/json" id="attendanceDataJson">
+<%- JSON.stringify(attendance.map(r => ({
+    roll: r.studentId ? r.studentId.rollNo : "—",
+    name: r.studentId ? r.studentId.name : "Student Deleted",
+    department: r.studentId ? r.studentId.department : "",
+    semester: r.studentId ? r.studentId.semester : "",
+    section: r.studentId ? r.studentId.section : "",
+    present: r.present
+}))) %>
+</script>
+
+<script type="application/json" id="sessionMetaJson">
+<%- JSON.stringify({
+    isGlobal: session.isGlobal,
+    date: session.date,
+    subject: session.subject,
+    department: session.department || "",
+    semester: session.semester || "",
+    section: session.section || "",
+    startTime: session.startTime
+}) %>
+</script>
 
 <!-- Attendance image generator -->
-<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
-
 <script>
+
+// Real, plain JavaScript — VS Code parses this correctly with zero errors,
+// since it no longer contains any <% %> EJS syntax at all.
+const attendanceData = JSON.parse(
+    document.getElementById("attendanceDataJson").textContent
+);
+
+const sessionMeta = JSON.parse(
+    document.getElementById("sessionMetaJson").textContent
+);
+
+const isGlobalSession = sessionMeta.isGlobal;
+
+// How many student rows fit comfortably on one 900x1600 sheet.
+// Tune this up/down after checking a real downloaded page.
+const ROWS_PER_PAGE = 14;
+
+function buildRowHTML(record) {
+    const statusClass = record.present ? "sheet-present" : "sheet-absent";
+    const statusText = record.present ? "PRESENT" : "ABSENT";
+
+    let nameHTML = record.name;
+    if (isGlobalSession && record.department) {
+        nameHTML += `<span class="sheet-class-tag">${record.department} · Sem ${record.semester}${record.section ? " · Sec " + record.section : ""}</span>`;
+    }
+
+    return `
+        <div class="sheet-student">
+            <span class="sheet-roll">${record.roll}</span>
+            <span class="sheet-name">${nameHTML}</span>
+            <span><span class="${statusClass}">${statusText}</span></span>
+        </div>
+    `;
+}
+
+function getClassLabel() {
+    if (isGlobalSession) {
+        return "All Students";
+    }
+    return `${sessionMeta.department} · Semester ${sessionMeta.semester} · Section ${sessionMeta.section}`;
+}
+
+function getTimeLabel() {
+    const d = new Date(sessionMeta.startTime);
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
 
 async function downloadAttendance() {
 
-    const sheet = document.getElementById("downloadSheet");
+    const button = document.querySelector(".download-btn");
+    const template = document.getElementById("downloadSheetTemplate");
+    const container = document.getElementById("downloadSheetContainer");
 
-    if (!sheet) {
-
+    if (!template || !container) {
         alert("Attendance sheet is not ready.");
-
         return;
-
     }
+
+    // Present students first, then absent — same ordering shown on-page
+    const sorted = [...attendanceData].sort((a, b) => {
+        if (a.present !== b.present) return a.present ? -1 : 1;
+        return String(a.roll).localeCompare(String(b.roll), undefined, { numeric: true });
+    });
+
+    const pages = [];
+    for (let i = 0; i < sorted.length; i += ROWS_PER_PAGE) {
+        pages.push(sorted.slice(i, i + ROWS_PER_PAGE));
+    }
+    if (pages.length === 0) pages.push([]);
 
     try {
 
-        const button = document.querySelector(".download-btn");
-
         if (button) {
-
-            button.innerHTML =
-                '<i class="bi bi-hourglass-split"></i> Creating sheet...';
-
             button.disabled = true;
-
         }
 
+        for (let pageIndex = 0; pageIndex < pages.length; pageIndex++) {
 
-        const canvas = await html2canvas(sheet, {
+            if (button) {
+                button.innerHTML =
+                    `<i class="bi bi-hourglass-split"></i> Creating sheet ${pageIndex + 1} of ${pages.length}...`;
+            }
 
-            scale: 3,
+            // Clone a fresh sheet from the template for this page
+            const sheetEl = template.content.firstElementChild.cloneNode(true);
 
-            useCORS: true,
+            sheetEl.querySelector(".sheet-class-value").textContent = getClassLabel();
+            sheetEl.querySelector(".sheet-subject-value").textContent = sessionMeta.subject;
+            sheetEl.querySelector(".sheet-date-value").textContent = sessionMeta.date;
+            sheetEl.querySelector(".sheet-time-value").textContent = getTimeLabel();
 
-            backgroundColor: "#ffffff",
+            const rowsWrap = sheetEl.querySelector(".sheet-student-rows");
+            rowsWrap.innerHTML = pages[pageIndex].map(buildRowHTML).join("");
 
-            logging: false
+            const pageLabel = sheetEl.querySelector(".sheet-page-label");
+            if (pageLabel) {
+                pageLabel.textContent = `Page ${pageIndex + 1} of ${pages.length}`;
+            }
 
-        });
+            // Wrap it off-screen so it renders but stays invisible to the user
+            const slot = document.createElement("div");
+            slot.className = "sheet-render-slot";
+            slot.appendChild(sheetEl);
+            container.appendChild(slot);
 
+            // Give the browser a couple frames to actually paint it
+            await new Promise(resolve =>
+                requestAnimationFrame(() => requestAnimationFrame(resolve))
+            );
 
-        const link = document.createElement("a");
+            const canvas = await html2canvas(sheetEl, {
+                scale: 3,
+                useCORS: true,
+                backgroundColor: "#ffffff",
+                logging: false
+            });
 
-        link.download =
-            "AttendEase-Attendance-<%= session.date %>.png";
+            const link = document.createElement("a");
+            link.download =
+                `AttendEase-Attendance-${sessionMeta.date}-page${pageIndex + 1}.png`;
+            link.href = canvas.toDataURL("image/png");
+            link.click();
 
-        link.href =
-            canvas.toDataURL("image/png");
+            container.removeChild(slot);
 
-        link.click();
-
+            // brief pause so the browser doesn't choke on many downloads at once
+            await new Promise(resolve => setTimeout(resolve, 400));
+        }
 
         if (button) {
-
             button.innerHTML =
                 '<i class="bi bi-check-circle-fill"></i> Downloaded';
 
             setTimeout(() => {
-
                 button.innerHTML =
                     '<i class="bi bi-download"></i> Download Attendance';
-
                 button.disabled = false;
-
             }, 2000);
-
         }
 
     } catch (error) {
 
-        console.error(
-            "Attendance image error:",
-            error
-        );
-
-        alert(
-            "Unable to create attendance image."
-        );
-
-
-        const button = document.querySelector(".download-btn");
+        console.error("Attendance image error:", error);
+        alert("Unable to create attendance image.");
 
         if (button) {
-
             button.innerHTML =
                 '<i class="bi bi-download"></i> Download Attendance';
-
             button.disabled = false;
-
         }
 
     }
@@ -1796,8 +1467,3 @@ async function downloadAttendance() {
 </body>
 
 </html>
-
-<!-- =========================================
-     HIDDEN ATTENDANCE EXPORT SHEET
-========================================= -->
-

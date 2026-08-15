@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Timetable • AttendEase</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+  :root{
+    --green:#1b7a43;
+    --green-dark:#125c31;
+    --green-light:#e7f5ec;
+    --gray-bg:#f1f2f5;
+    --text-main:#1a1a1a;
+    --text-soft:#6b7280;
+    --line:#e6e7eb;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:#eef2f7;
+    font-family:'Poppins', sans-serif;
+    color:var(--text-main);
+  }
+  .page-wrap{
+    max-width:800px;
+    margin:0 auto;
+    padding:20px 15px 50px;
+  }
+  .back-btn{
+    color:var(--green);
+    text-decoration:none;
+    font-weight:600;
+    display:inline-block;
+    margin-bottom:15px;
+  }
+  .page-header{
+    background:linear-gradient(135deg, var(--green), var(--green-dark));
+    color:#fff;
+    border-radius:22px;
+    padding:22px;
+    margin-bottom:18px;
+    box-shadow:0 8px 20px rgba(0,0,0,.12);
+  }
+  .page-header h1{
+    margin:0;
+    font-size:22px;
+    font-weight:700;
+  }
+  .page-header p{
+    margin:4px 0 0;
+    opacity:.85;
+    font-size:13px;
+  }
+  .filter-card{
+    background:#fff;
+    border-radius:18px;
+    padding:16px;
+    margin-bottom:18px;
+    box-shadow:0 4px 14px rgba(0,0,0,.06);
+  }
+  .filter-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .filter-row label{
+    font-size:12px;
+    font-weight:600;
+    color:var(--text-soft);
+    display:block;
+    margin-bottom:5px;
+  }
+  select{
+    width:100%;
+    padding:10px 12px;
+    border-radius:10px;
+    border:1.5px solid var(--line);
+    background:var(--gray-bg);
+    font-family:'Poppins', sans-serif;
+    font-size:14px;
+    color:var(--text-main);
+  }
+  .filter-btn{
+    width:100%;
+    margin-top:12px;
+    padding:11px;
+    border:none;
+    border-radius:10px;
+    background:var(--green);
+    color:#fff;
+    font-weight:600;
+    font-size:14px;
+  }
+  .day-card{
+    background:#fff;
+    border-radius:16px;
+    margin-bottom:14px;
+    overflow:hidden;
+    box-shadow:0 3px 10px rgba(0,0,0,.05);
+  }
+  .day-header{
+    background:var(--green-light);
+    color:var(--green-dark);
+    font-weight:700;
+    font-size:14px;
+    padding:10px 16px;
+    letter-spacing:.4px;
+  }
+  .period-time{
+    font-size:11px;
+    color:var(--text-soft);
+    min-width:50px;
+}
+  .period-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:12px 16px;
+    border-bottom:1px solid var(--line);
+    gap:10px;
+  }
+  .period-row:last-child{border-bottom:none;}
+  .period-num{
+    width:26px;
+    height:26px;
+    border-radius:50%;
+    background:var(--green);
+    color:#fff;
+    font-size:12px;
+    font-weight:700;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    flex-shrink:0;
+  }
+
+
+.period-subject{
+    flex:1;
+}
+
+  .period-subject{
+    flex:1;
+    font-size:14px;
+    font-weight:600;
+  }
+  .period-room{
+    font-size:12px;
+    color:var(--text-soft);
+  }
+  .no-class{
+    padding:10px 16px;
+    font-size:13px;
+    color:var(--text-soft);
+    font-style:italic;
+  }
+  .empty-state{
+    background:#fff;
+    border-radius:16px;
+    padding:40px 20px;
+    text-align:center;
+    color:var(--text-soft);
+    font-size:14px;
+  }
+  @media (max-width:420px){
+    .filter-row{grid-template-columns:1fr;}
+  }
+</style>
+</head>
+<body>
+
+<div class="page-wrap">
+
+  <a href="/student-dashboard" class="back-btn">
+    <i class="bi bi-arrow-left"></i> Dashboard
+  </a>
+
+  <div class="page-header">
+    <h1><i class="bi bi-calendar3 me-1"></i> Timetable</h1>
+    <p>Class schedule by department and semester</p>
+  </div>
+
+  <div class="filter-card">
+    <form method="GET" action="/timetable">
+      <div class="filter-row">
+        <div>
+          <label>Department</label>
+          <select name="department">
+            <option value="" <%= !selectedDepartment ? "selected" : "" %>>Select Department</option>
+            <option value="BSc Computer Science" <%= selectedDepartment === "BSc Computer Science" ? "selected" : "" %>>B.Sc Computer Science</option>
+            <option value="BSc IT" <%= selectedDepartment === "BSc IT" ? "selected" : "" %>>B.Sc IT</option>
+            <option value="BCA" <%= selectedDepartment === "BCA" ? "selected" : "" %>>BCA</option>
+            <option value="BA" <%= selectedDepartment === "BA" ? "selected" : "" %>>B.A</option>
+            <option value="BCom" <%= selectedDepartment === "BCom" ? "selected" : "" %>>B.Com</option>
+            <option value="BSc" <%= selectedDepartment === "BSc" ? "selected" : "" %>>B.Sc</option>
+            <option value="BSc Medical" <%= selectedDepartment === "BSc Medical" ? "selected" : "" %>>B.Sc Medical</option>
+            <option value="B.Sc Economics" <%= selectedDepartment === "B.Sc Economics" ? "selected" : "" %>>B.Sc Economics</option>
+            <option value="B.Voc (Software Development)" <%= selectedDepartment === "B.Voc (Software Development)" ? "selected" : "" %>>B.Voc (Software Development)</option>
+            <option value="BBA" <%= selectedDepartment === "BBA" ? "selected" : "" %>>BBA</option>
+          </select>
+        </div>
+        <div>
+          <label>Semester</label>
+          <select name="semester">
+            <option value="" <%= !selectedSemester ? "selected" : "" %>>Select Semester</option>
+            <option value="1" <%= selectedSemester === "1" ? "selected" : "" %>>1st Semester</option>
+            <option value="2" <%= selectedSemester === "2" ? "selected" : "" %>>2nd Semester</option>
+            <option value="3" <%= selectedSemester === "3" ? "selected" : "" %>>3rd Semester</option>
+            <option value="4" <%= selectedSemester === "4" ? "selected" : "" %>>4th Semester</option>
+            <option value="5" <%= selectedSemester === "5" ? "selected" : "" %>>5th Semester</option>
+            <option value="6" <%= selectedSemester === "6" ? "selected" : "" %>>6th Semester</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="filter-btn">
+        <i class="bi bi-filter"></i> View Timetable
+      </button>
+    </form>
+  </div>
+
+  <% if (!hasResults) { %>
+
+    <div class="empty-state">
+      <i class="bi bi-calendar-x" style="font-size:32px; display:block; margin-bottom:8px;"></i>
+      No timetable found for this selection.
+    </div>
+
+  <% } else { %>
+
+    <% dayOrder.forEach(day => { %>
+
+      <div class="day-card">
+        <div class="day-header"><%= day %></div>
+
+        <% if (groupedByDay[day].length === 0) { %>
+
+          <div class="no-class">No classes scheduled</div>
+
+        <% } else { %>
+
+          <% groupedByDay[day].forEach(entry => { %>
+
+<div class="period-row">
+  <div class="period-num"><%= entry.period %></div>
+  <% if (entry.time) { %>
+    <div class="period-time"><%= entry.time %></div>
+  <% } %>
+  <div class="period-subject"><%= entry.subject %></div>
+  <% if (entry.room) { %>
+    <div class="period-room"><%= entry.room %></div>
+  <% } %>
+</div>
+
+          <% }) %>
+
+        <% } %>
+
+      </div>
+
+    <% }) %>
+
+  <% } %>
+
+</div>
+
+</body>
+</html>

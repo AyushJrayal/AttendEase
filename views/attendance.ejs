@@ -121,6 +121,16 @@
             font-weight: 600;
         }
 
+        .broadcast-hint {
+            background: #fff8e6;
+            border: 1px solid #ffe4a3;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 13px;
+            color: #7a5b00;
+            margin-bottom: 18px;
+        }
+
         @media (max-width: 576px) {
 
             .attendance-page {
@@ -198,6 +208,12 @@
 
         </h5>
 
+        <div class="broadcast-hint">
+            <i class="bi bi-info-circle-fill me-1"></i>
+            Leave Department, Semester and Section on "All" to send this attendance
+            to every logged-in student instead of one specific class.
+        </div>
+
 
         <form
             action="/attendance/start"
@@ -216,12 +232,11 @@
 
                 <select
                     name="department"
-                    class="form-select"
-                    required>
+                    class="form-select">
 
-                    <option value="" selected disabled>
+                    <option value="" selected>
 
-                        Select Department
+                        All Departments
 
                     </option>
 
@@ -267,6 +282,24 @@
 
                     </option>
 
+                    <option value="B.Sc Economics">
+
+                        B.Sc Economics
+
+                    </option>
+
+                    <option value="B.Voc (Software Development)">
+
+                        B.Voc (Software Development)
+
+                    </option>
+
+                    <option value="BBA">
+
+                        BBA
+
+                    </option>
+
                 </select>
 
             </div>
@@ -284,12 +317,11 @@
 
                 <select
                     name="semester"
-                    class="form-select"
-                    required>
+                    class="form-select">
 
-                    <option value="" selected disabled>
+                    <option value="" selected>
 
-                        Select Semester
+                        All Semesters
 
                     </option>
 
@@ -346,12 +378,11 @@
 
                 <select
                     name="section"
-                    class="form-select"
-                    required>
+                    class="form-select">
 
-                    <option value="" selected disabled>
+                    <option value="" selected>
 
-                        Select Section
+                        All Sections
 
                     </option>
 
@@ -390,12 +421,11 @@
 
                 <select
                     name="subject"
-                    class="form-select"
-                    required>
+                    class="form-select">
 
-                    <option value="" selected disabled>
+                    <option value="" selected>
 
-                        Select Subject
+                        General Attendance
 
                     </option>
 
@@ -479,6 +509,7 @@
 
             Start the session and students in the selected
             class will receive an attendance notification.
+            Leave a field on "All" to notify every student instead.
             Students who don't respond within 60 seconds
             will automatically be marked absent.
 

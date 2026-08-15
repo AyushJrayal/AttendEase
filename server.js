@@ -10,6 +10,8 @@ const Attendance = require("./models/Attendance");
 
 const AttendanceSession = require("./models/AttendanceSession");
 
+const Timetable = require("./models/Timetable");
+
 const Teacher = require("./models/Teacher");
 
 const path = require("path");
@@ -20,6 +22,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 
 const server = http.createServer(app);
+
 const io = new Server(server);
 
 io.on("connection", (socket) => {
@@ -32,10 +35,14 @@ io.on("connection", (socket) => {
             return;
         }
 
-        const roomName =
-            `${studentData.department}-${studentData.semester}-${studentData.section}`;
+        const roomName = buildRoomName(
+            studentData.department,
+            studentData.semester,
+            studentData.section
+        );
 
         socket.join(roomName);
+        socket.join("all-students");   // every student also joins this global room
 
         console.log(
             "Student joined room:",
@@ -45,6 +52,15 @@ io.on("connection", (socket) => {
     });
 
 });
+
+function buildRoomName(department, semester, section) {
+    return `${department}-${semester}-${section}`.trim().toLowerCase();
+}
+
+function escapeRegex(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 
 app.use(express.urlencoded({ extended: true }));
 
@@ -79,9 +95,9 @@ app.get("/", (req,res)=>{
 
 });
 
-app.get("/student-login", (req, res) => {
+app.get("/login", (req, res) => {
 
-    res.render("student-login");
+    res.render("login");
 
 });
 
@@ -135,7 +151,7 @@ mobile: req.body.mobile,
 
         await student.save();
 
-        res.redirect("/student-login");
+        res.redirect("/login");
 
     } catch (err) {
 
@@ -315,6 +331,98 @@ app.get("/student-profile", (req, res) => {
 
 });
 
+// View timetable with department/semester filter
+app.get("/timetable", async (req, res) => {
+
+    try {
+
+        let selectedDepartment = req.query.department || "";
+        let selectedSemester = req.query.semester || "";
+
+        // Default to the logged-in student's own class if nothing selected
+        if (!selectedDepartment && !selectedSemester && req.session.student) {
+            selectedDepartment = req.session.student.department;
+            selectedSemester = String(req.session.student.semester);
+        }
+
+        let entries = [];
+
+        if (selectedDepartment && selectedSemester) {
+            entries = await Timetable.find({
+                department: selectedDepartment,
+                semester: Number(selectedSemester)
+            }).sort({ period: 1 });
+        }
+
+        const dayOrder = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+        const groupedByDay = {};
+        dayOrder.forEach(day => { groupedByDay[day] = []; });
+
+        entries.forEach(entry => {
+            if (groupedByDay[entry.day]) {
+                groupedByDay[entry.day].push(entry);
+            }
+        });
+
+        res.render("timetable", {
+            dayOrder,
+            groupedByDay,
+            selectedDepartment,
+            selectedSemester,
+            hasResults: entries.length > 0
+        });
+
+    } catch (error) {
+
+        console.error("Timetable error:", error);
+        res.status(500).send("Unable to load timetable.");
+
+    }
+
+});
+
+// Admin: add a timetable entry
+app.get("/add-timetable", (req, res) => {
+
+    if (!req.session.teacher) {
+        return res.redirect("/admin-login");
+    }
+
+    res.render("add-timetable");
+
+});
+
+app.post("/add-timetable", async (req, res) => {
+
+    try {
+
+        if (!req.session.teacher) {
+            return res.redirect("/admin-login");
+        }
+
+        await Timetable.create({
+    department: req.body.department,
+    semester: Number(req.body.semester),
+    day: req.body.day,
+    period: Number(req.body.period),
+    subject: req.body.subject,
+    room: req.body.room,
+    effectiveFrom: req.body.effectiveFrom,
+    time: req.body.time
+});
+
+        res.redirect("/add-timetable");
+
+    } catch (error) {
+
+        console.error("Add timetable error:", error);
+        res.send("Unable to add timetable entry.");
+
+    }
+
+});
+
 app.get("/attendance", async (req, res) => {
 
     const students = await Student.find();
@@ -384,153 +492,85 @@ app.get("/student-attendance", async (req, res) => {
 });
 
 app.post("/attendance/start", async (req, res) => {
-
     try {
-
-        // Make sure teacher is logged in
         if (!req.session.teacher) {
             return res.redirect("/admin-login");
         }
 
-        const {
-            department,
-            semester,
-            section,
-            subject
-        } = req.body;
+        const { department, semester, section, subject } = req.body;
+        const isGlobal = !department && !semester && !section;
 
-        // Find only students belonging to this class
-        const students = await Student.find({
-            department,
-            semester: Number(semester),
-            section
-        });
+        const now = new Date();
+        const endTime = new Date(now.getTime() + 60 * 1000);
 
-        if (students.length === 0) {
-            return res.status(404).send(
-                "No students found for this class."
-            );
+        let students;
+        let roomTarget;
+        let sessionData = {
+            subject: subject || "General Attendance",
+            date: now.toISOString().split("T")[0],
+            isOpen: true,
+            startTime: now,
+            endTime,
+            isGlobal
+        };
+
+        if (isGlobal) {
+            students = await Student.find();
+            roomTarget = "all-students";
+        } else {
+            students = await Student.find({
+                department: { $regex: `^${escapeRegex(department.trim())}$`, $options: "i" },
+                semester: Number(semester),
+                section: { $regex: `^${escapeRegex(section.trim())}$`, $options: "i" }
+            });
+            roomTarget = buildRoomName(department, semester, section);
+            sessionData.department = department;
+            sessionData.semester = Number(semester);
+            sessionData.section = section;
         }
 
-        // Current date
-        const now = new Date();
+        if (students.length === 0) {
+            return res.status(404).send("No students found for this class.");
+        }
 
-        // Attendance ends after 60 seconds
-        const endTime = new Date(
-            now.getTime() + 60 * 1000
+        const session = await AttendanceSession.create(sessionData);
+
+        await Attendance.insertMany(
+            students.map(student => ({
+                studentId: student._id,
+                sessionId: session._id,
+                present: false,
+                markedAt: null,
+                date: now
+            }))
         );
 
-        // Create attendance session
-        const session = await AttendanceSession.create({
-
-            department,
-
-            semester: Number(semester),
-
-            section,
-
-            subject,
-
-            date: now.toISOString().split("T")[0],
-
-            isOpen: true,
-
+        io.to(roomTarget).emit("attendanceStarted", {
+            sessionId: session._id,
+            department: sessionData.department || "All",
+            semester: sessionData.semester || "All",
+            section: sessionData.section || "All",
+            subject: sessionData.subject,
             startTime: now,
-
-            endTime
-
+            endTime,
+            duration: 60
         });
 
-        // Create an ABSENT record for every student
-        // in this particular class.
-        await Attendance.insertMany(
-
-            students.map(student => ({
-
-                studentId: student._id,
-
-                sessionId: session._id,
-
-                present: false,
-
-                markedAt: null,
-
-                date: now
-
-            }))
-
-        );
-
-        // Notify only students from this class
-        io.to(
-            `${department}-${semester}-${section}`
-        ).emit(
-            "attendanceStarted",
-            {
-                sessionId: session._id,
-
-                department,
-
-                semester: Number(semester),
-
-                section,
-
-                subject,
-
-                startTime: now,
-
-                endTime,
-
-                duration: 60
-            }
-        );
-
-        // Automatically close attendance after 60 seconds
-        setTimeout(async () => {
-
+         setTimeout(async () => {
             try {
-
-                await AttendanceSession.findByIdAndUpdate(
-                    session._id,
-                    {
-                        isOpen: false
-                    }
-                );
-
-                console.log(
-                    `Attendance closed: ${session._id}`
-                );
-
+                await AttendanceSession.findByIdAndUpdate(session._id, { isOpen: false });
             } catch (error) {
-
-                console.error(
-                    "Error closing attendance:",
-                    error
-                );
-
+                console.error("Error closing attendance:", error);
             }
-
         }, 60 * 1000);
 
-        // Open the NEW teacher attendance page
-        res.redirect(
-            `/attendance/today/${session._id}`
-        );
+        res.redirect(`/attendance/today/${session._id}`);
 
     } catch (error) {
-
-        console.error(
-            "Start attendance error:",
-            error
-        );
-
-        res.status(500).send(
-            "Unable to start attendance."
-        );
-
+        console.error("Start attendance error:", error);
+        res.status(500).send("Unable to start attendance.");
     }
-
-});
+ });
 
 app.post("/attendance/present", async (req, res) => {
 
@@ -572,15 +612,18 @@ app.post("/attendance/present", async (req, res) => {
         }
 
         if (
-            student.department !== session.department ||
-            Number(student.semester) !== Number(session.semester) ||
-            student.section !== session.section
-        ) {
-            return res.json({
-                success: false,
-                message: "This attendance session is not for your class."
-            });
-        }
+    !session.isGlobal &&
+    (
+        student.department !== session.department ||
+        Number(student.semester) !== Number(session.semester) ||
+        student.section !== session.section
+    )
+) {
+    return res.json({
+        success: false,
+        message: "This attendance session is not for your class."
+    });
+}
 
         // Find the attendance record created when
         // the teacher started the session
@@ -658,17 +701,22 @@ app.get("/attendance/today/:sessionId", async (req, res) => {
 
         // Get every attendance record for this session
         // and also get student information
-        const attendance = await Attendance.find({
-            sessionId: session._id
-        })
-        .populate(
-            "studentId",
-            "name rollNo department semester section"
-        )
-        .sort({
-            "studentId.rollNo": 1
-        });
+      let attendance = await Attendance.find({
+    sessionId: session._id
+}).populate(
+    "studentId",
+    "name rollNo department semester section"
+);
 
+// Present students first, absent below — then sorted by roll number within each group
+attendance.sort((a, b) => {
+    if (a.present !== b.present) {
+        return a.present ? -1 : 1;
+    }
+    const rollA = a.studentId ? String(a.studentId.rollNo) : "";
+    const rollB = b.studentId ? String(b.studentId.rollNo) : "";
+    return rollA.localeCompare(rollB, undefined, { numeric: true });
+});
         res.render(
             "today-attendance",
             {
@@ -772,6 +820,16 @@ app.get("/students", async (req, res) => {
     const students = await Student.find();
 
     res.render("students", {
+        students: students
+    });
+
+});
+
+app.get("/studentss", async (req, res) => {
+
+    const students = await Student.find();
+
+    res.render("studentss", {
         students: students
     });
 

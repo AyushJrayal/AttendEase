@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+    <title>AttendEase • Studentss</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+        rel="stylesheet">
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #f5f7fb;
+            font-family: Arial, sans-serif;
+        }
+
+        .students-page {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 30px 20px 50px;
+        }
+
+        /* Header */
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .page-header h2 {
+            margin: 0;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .back-btn {
+            display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    width: 100%;
+
+    padding: 14px;
+
+    background: #1f2937 ;
+    color: white;
+
+    border-radius: 14px;
+
+    text-decoration: none;
+
+    font-size: 15px;
+    font-weight: 600;
+
+    margin-top: 5px;
+
+    transition: 0.2s;
+        }
+
+        /* Search */
+
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #777;
+        }
+
+        #searchStudent {
+            height: 48px;
+            padding-left: 45px;
+            border-radius: 12px;
+            border: 1px solid #ddd;
+        }
+
+        #searchStudent:focus {
+            border-color: #0e6b3f;
+            box-shadow: 0 0 0 3px rgba(14, 107, 63, .12);
+        }
+
+        /* Table card */
+
+        .table-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 5px 20px rgba(0,0,0,.07);
+            overflow: hidden;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        table {
+            margin: 0 !important;
+            min-width: 700px;
+        }
+
+        thead th {
+            background: #1f2937 !important;
+            color: white !important;
+            border: none;
+            padding: 15px;
+            white-space: nowrap;
+        }
+
+        tbody td {
+            padding: 14px 15px;
+            vertical-align: middle;
+        }
+
+        .student-name {
+            font-weight: 600;
+        }
+
+        .department {
+            color: #555;
+        }
+
+        /* Empty state */
+
+        .empty-message {
+            text-align: center;
+            padding: 35px 20px;
+            color: #777;
+        }
+
+        /* Mobile */
+
+        @media (max-width: 600px) {
+
+            .students-page {
+                padding: 20px 12px 35px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .page-header h2 {
+                font-size: 25px;
+            }
+
+            .back-btn {
+                width: 100%;
+                text-align: center;
+            }
+
+            .table-card {
+                border-radius: 12px;
+            }
+
+            /*
+             * On mobile the table can be
+             * horizontally scrolled instead
+             * of destroying the layout.
+             */
+
+            .table-responsive {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            table {
+                min-width: 680px;
+            }
+
+            thead th,
+            tbody td {
+                padding: 12px 10px;
+                font-size: 14px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="students-page">
+
+    <!-- HEADER -->
+
+    <div class="page-header">
+
+        <h2>
+            <i class="bi bi-people-fill"></i>
+            Student List
+        </h2>
+
+        
+
+    </div>
+
+
+    <!-- SEARCH -->
+
+    <div class="search-box">
+
+        <i class="bi bi-search"></i>
+
+        <input
+            type="text"
+            id="searchStudent"
+            class="form-control"
+            placeholder="Search by Name or Roll Number">
+
+    </div>
+
+
+    <!-- STUDENT TABLE -->
+
+    <div class="table-card">
+
+        <div class="table-responsive">
+
+            <table class="table table-striped table-hover">
+
+                <thead>
+
+                    <tr>
+
+                        <th>Name</th>
+
+                        <th>Roll No</th>
+
+                        <th>Semester</th>
+
+                        <th>Department</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                <% if (students && students.length > 0) { %>
+
+                    <% students.forEach(student => { %>
+
+                        <tr>
+
+                            <td class="student-name">
+
+                                <%= student.name %>
+
+                            </td>
+
+                            <td>
+
+                                <%= student.rollNo %>
+
+                            </td>
+
+                            <td>
+
+                                Semester <%= student.semester %>
+
+                            </td>
+
+                            <td class="department">
+
+                                <%= student.department %>
+
+                            </td>
+
+                           
+                        </tr>
+
+                    <% }) %>
+
+                <% } else { %>
+
+                    <tr>
+
+                        <td
+                            colspan="4"
+                            class="empty-message">
+
+                            <i class="bi bi-people fs-2"></i>
+
+                            <br>
+
+                            No students found.
+
+                        </td>
+
+                    </tr>
+
+                <% } %>
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </div>
+
+    <a
+            href="/student-dashboard"
+            class="btn btn-outline-dark back-btn">
+
+            <i class="bi bi-arrow-left"></i>
+            Back to Dashboard
+
+        </a>
+</div>
+
+
+<script>
+
+const search = document.getElementById("searchStudent");
+
+search.addEventListener("keyup", () => {
+
+    const value = search.value.toLowerCase().trim();
+
+    const rows = document.querySelectorAll("tbody tr");
+
+    rows.forEach(row => {
+
+        const text = row.innerText.toLowerCase();
+
+        row.style.display =
+            text.includes(value) ? "" : "none";
+
+    });
+
+});
+
+</script>
+
+</body>
+
+</html>
