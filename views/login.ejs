@@ -27,25 +27,26 @@ Smart Attendance System
 
 </p>
 
-<form action="/login" method="POST">
+<form id="studentLoginForm">
 
-<input
-type="email"
-name="email"
-placeholder="Email"
-required>
+    <input
+        type="email"
+        name="email"
+        placeholder="Email"
+        required>
 
-<input
-type="password"
-name="password"
-placeholder="Password"
-required>
+    <input
+        type="password"
+        name="password"
+        id="password"
+        placeholder="Password"
+        required>
 
-<button class="student">
+    <div id="loginError" class="login-error"></div>
 
-Student Login
-
-</button>
+    <button class="student">
+        Student Login
+    </button>
 
 </form>
 
@@ -90,6 +91,64 @@ Developed by
 </div>
 
 </div>
+
+<script>
+
+const form = document.getElementById("studentLoginForm");
+const loginError = document.getElementById("loginError");
+const passwordInput = document.getElementById("password");
+
+form.addEventListener("submit", async (e) => {
+
+    e.preventDefault();
+
+    loginError.style.display = "none";
+    passwordInput.classList.remove("input-error");
+
+    const formData = new FormData(form);
+
+    try {
+
+        const response = await fetch("/login", {
+            method: "POST",
+            body: new URLSearchParams(formData)
+        });
+
+        if (response.ok) {
+
+            window.location.href = "/student-dashboard";
+
+        } else {
+
+            loginError.textContent =
+                "⚠ Incorrect password. Please try again.";
+
+            loginError.style.display = "block";
+
+            passwordInput.classList.add("input-error");
+
+            passwordInput.focus();
+
+        }
+
+    } catch (error) {
+
+        loginError.textContent =
+            "⚠ Unable to connect. Please check your internet connection.";
+
+        loginError.style.display = "block";
+
+    }
+
+});
+
+passwordInput.addEventListener("input", () => {
+
+    loginError.style.display = "none";
+    passwordInput.classList.remove("input-error");
+
+});
+</script>
 
 </body>
 

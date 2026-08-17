@@ -37,23 +37,25 @@
 
 
     <!-- Admin Login Form -->
-    <form
-        action="/admin-login"
-        method="POST">
+    <form id="adminLoginForm">
+
+      <input
+    type="text"
+    name="username"
+    id="username"
+    placeholder="Username"
+    autocomplete="username"
+    required>
 
         <input
-            type="text"
-            name="username"
-            placeholder="Username"
-            autocomplete="username"
-            required>
+    type="password"
+    name="password"
+    id="adminPassword"
+    placeholder="Password"
+    autocomplete="current-password"
+    required>
 
-        <input
-            type="password"
-            name="password"
-            placeholder="Password"
-            autocomplete="current-password"
-            required>
+    <div id="adminLoginError" class="login-error"></div>
 
 
         <button
@@ -102,6 +104,84 @@ Developed by
 </div>
 
 </div>
+
+<script>
+
+const adminForm = document.getElementById("adminLoginForm");
+const usernameInput = document.getElementById("username");
+const adminPassword = document.getElementById("adminPassword");
+const adminLoginError = document.getElementById("adminLoginError");
+
+adminForm.addEventListener("submit", async (e) => {
+
+    e.preventDefault();
+
+    adminLoginError.style.display = "none";
+
+    usernameInput.classList.remove("input-error");
+    adminPassword.classList.remove("input-error");
+
+    const formData = new FormData(adminForm);
+
+    try {
+
+        const response = await fetch("/admin-login", {
+
+            method: "POST",
+
+            body: new URLSearchParams(formData)
+
+        });
+
+        if (response.ok) {
+
+            window.location.href = "/dashboard";
+
+        } else {
+
+            const message = await response.text();
+
+            adminLoginError.textContent =
+                "⚠ " + message;
+
+            adminLoginError.style.display = "block";
+
+            adminPassword.classList.add("input-error");
+
+            adminPassword.focus();
+
+        }
+
+    } catch (error) {
+
+        adminLoginError.textContent =
+            "⚠ Unable to connect. Please try again.";
+
+        adminLoginError.style.display = "block";
+
+    }
+
+});
+
+
+adminPassword.addEventListener("input", () => {
+
+    adminLoginError.style.display = "none";
+
+    adminPassword.classList.remove("input-error");
+
+});
+
+
+usernameInput.addEventListener("input", () => {
+
+    adminLoginError.style.display = "none";
+
+    usernameInput.classList.remove("input-error");
+
+});
+
+</script>
 
 </body>
 

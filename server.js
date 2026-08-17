@@ -182,15 +182,19 @@ app.post("/admin-login", async (req, res) => {
 
         if (!teacher) {
 
-            return res.send("Teacher Not Found");
+    return res.status(401).send(
+        "Incorrect username or password. Please try again."
+    );
 
-        }
+}
 
-        if (teacher.password !== password) {
+if (teacher.password !== password) {
 
-            return res.send("Wrong Password");
+    return res.status(401).send(
+        "Incorrect username or password. Please try again."
+    );
 
-        }
+}
 
         // Save teacher in session
         req.session.teacher = teacher;
@@ -249,15 +253,11 @@ app.post("/login", async (req, res) => {
     const student = await Student.findOne({ email: email });
 
     if (!student) {
+    return res.status(404).send("We couldn't find an account with that email.");
+}
 
-        return res.send("Student Not Found");
-
-    }
-
-   if (student.password !== password) {
-
-    return res.send("Wrong Password");
-
+  if (student.password !== password) {
+    return res.status(401).send("Incorrect password. Please try again.");
 }
 
 // Save student in session

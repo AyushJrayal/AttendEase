@@ -25,6 +25,7 @@
 
     <link rel="stylesheet" href="/css/style.css">
 
+
 </head>
 
 <body>
@@ -35,23 +36,11 @@
 
     <div class="attendance-header">
 
-        <a
-            href="/student-dashboard"
-            class="back-btn">
+        
 
-            <i class="bi bi-arrow-left"></i>
+        <%- include("partials/header") %>
 
-        </a>
-
-        <div class="header-logo">
-
-            <img
-                src="/images/university-logo.jpg"
-                alt="University Logo">
-
-        </div>
-
-        <h1>My Attendance</h1>
+        
 
         <p>
             Welcome, <strong><%= student.name %></strong>
@@ -271,9 +260,9 @@
 
     <a
         href="/student-dashboard"
-        class="dashboard-btn">
+        class="back-btn">
 
-        <i class="bi bi-house-fill"></i>
+        <i class="bi bi-arrow-left"></i>
 
         Back to Dashboard
 
@@ -282,28 +271,10 @@
 
     <!-- FOOTER -->
 
-    <div class="page-footer">
 
+    
 
-Powered by
-
-<strong>JC Studio</strong>
-
-<br>
-
-Developed by
-
-<strong>Ayush Jaryal</strong>
-
-<br>
-
-🌐 Jaryal.shop
-
-
-    </div>
-    <%- include("partials/bottom-nav") %>
-
-</div>
+<%- include("partials/footer") %>
 
 
 <script>

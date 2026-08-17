@@ -203,6 +203,9 @@
         }
 
     </style>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+
+<link rel="stylesheet" href="/css/style.css">
 
 </head>
 
@@ -211,7 +214,7 @@
 <div class="students-page">
 
     <!-- HEADER -->
-
+<%- include("partials/header") %>
     <div class="page-header">
 
         <h2>
@@ -222,6 +225,7 @@
         
 
     </div>
+    
 
 
     <!-- SEARCH -->
@@ -336,7 +340,11 @@
             Back to Dashboard
 
         </a>
+
+        <%- include("partials/footer") %>
 </div>
+
+
 
 
 <script>
