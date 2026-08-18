@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Registration Successful | AttendEase</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+
+    <style>
+
+        :root {
+            --green: #0B5D3B;
+            --dark-green: #08452D;
+            --cream: #FFFDF7;
+            --gold: #A8872D;
+            --light-green: #EAF4EF;
+            --text: #14213D;
+        }
+
+
+        * {
+            box-sizing: border-box;
+        }
+
+
+        body {
+
+            margin: 0;
+
+            min-height: 100vh;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            background:
+                radial-gradient(
+                    circle at top,
+                    #ffffff 0%,
+                    #F4F8F5 45%,
+                    #EAF4EF 100%
+                );
+
+            font-family: Arial, Helvetica, sans-serif;
+
+            color: var(--text);
+
+            overflow: hidden;
+        }
+
+
+        /* ==============================
+           SUCCESS CARD
+        ============================== */
+
+        .success-card {
+
+            width: 90%;
+
+            max-width: 470px;
+
+            background: var(--cream);
+
+            border-radius: 18px;
+
+            padding: 42px 30px 35px;
+
+            text-align: center;
+
+            box-shadow:
+                0 15px 45px rgba(11, 93, 59, 0.15);
+
+            border: 1px solid #D9E5DE;
+
+            animation: cardAppear 0.7s ease forwards;
+
+            position: relative;
+        }
+
+
+        @keyframes cardAppear {
+
+            from {
+                opacity: 0;
+                transform: translateY(25px) scale(0.96);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+
+        }
+
+
+        /* ==============================
+           SUCCESS ICON
+        ============================== */
+
+        .success-icon {
+
+            width: 90px;
+
+            height: 90px;
+
+            margin: 0 auto 22px;
+
+            border-radius: 50%;
+
+            background: var(--light-green);
+
+            border: 3px solid var(--green);
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            position: relative;
+
+            animation: iconPop 0.6s 0.25s ease both;
+        }
+
+
+        .success-icon i {
+
+            font-size: 45px;
+
+            color: var(--green);
+
+            animation: checkAppear 0.4s 0.65s ease both;
+        }
+
+
+        @keyframes iconPop {
+
+            0% {
+                transform: scale(0);
+            }
+
+            70% {
+                transform: scale(1.12);
+            }
+
+            100% {
+                transform: scale(1);
+            }
+
+        }
+
+
+        @keyframes checkAppear {
+
+            from {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+        }
+
+
+        /* ==============================
+           GOLD RING
+        ============================== */
+
+        .success-icon::before {
+
+            content: "";
+
+            position: absolute;
+
+            inset: -8px;
+
+            border-radius: 50%;
+
+            border: 1px solid var(--gold);
+
+            opacity: 0.5;
+
+            animation: ringPulse 2s infinite;
+        }
+
+
+        @keyframes ringPulse {
+
+            0% {
+                transform: scale(0.9);
+                opacity: 0.7;
+            }
+
+            70% {
+                transform: scale(1.15);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1.15);
+                opacity: 0;
+            }
+
+        }
+
+
+        /* ==============================
+           TEXT
+        ============================== */
+
+        .success-card h1 {
+
+            margin: 0;
+
+            color: var(--green);
+
+            font-size: 28px;
+
+            font-weight: 800;
+
+            animation: textAppear 0.6s 0.4s ease both;
+        }
+
+
+        .success-card h1::after {
+
+            content: "";
+
+            display: block;
+
+            width: 55px;
+
+            height: 3px;
+
+            background: var(--gold);
+
+            margin: 12px auto 16px;
+
+            border-radius: 5px;
+        }
+
+
+        .success-card p {
+
+            margin: 0 auto 25px;
+
+            max-width: 350px;
+
+            color: #68756F;
+
+            font-size: 14px;
+
+            line-height: 1.6;
+
+            animation: textAppear 0.6s 0.5s ease both;
+        }
+
+
+        @keyframes textAppear {
+
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+        }
+
+
+        /* ==============================
+           BUTTON
+        ============================== */
+
+        .home-btn {
+
+            display: inline-flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            gap: 7px;
+
+            padding: 12px 25px;
+
+            border-radius: 8px;
+
+            background: var(--green);
+
+            color: #FFFFFF;
+
+            text-decoration: none;
+
+            font-size: 13px;
+
+            font-weight: 700;
+
+            transition: 0.25s ease;
+
+            animation: textAppear 0.6s 0.6s ease both;
+        }
+
+
+        .home-btn:hover {
+
+            background: var(--dark-green);
+
+            color: #FFFFFF;
+
+            transform: translateY(-2px);
+
+            box-shadow:
+                0 6px 15px rgba(11, 93, 59, 0.22);
+        }
+
+
+        .home-btn i {
+
+            color: #F1D77A;
+        }
+
+
+        /* ==============================
+           BRAND
+        ============================== */
+
+        .brand {
+
+            margin-top: 25px;
+
+            color: #8A968F;
+
+            font-size: 11px;
+
+            letter-spacing: 0.7px;
+
+            animation: textAppear 0.6s 0.7s ease both;
+        }
+
+
+        .brand strong {
+
+            color: var(--green);
+        }
+
+
+        /* ==============================
+           MOBILE
+        ============================== */
+
+        @media (max-width: 500px) {
+
+            .success-card {
+
+                width: calc(100% - 30px);
+
+                padding: 35px 22px 30px;
+
+                border-radius: 15px;
+            }
+
+
+            .success-icon {
+
+                width: 78px;
+
+                height: 78px;
+            }
+
+
+            .success-icon i {
+
+                font-size: 38px;
+            }
+
+
+            .success-card h1 {
+
+                font-size: 24px;
+            }
+
+
+            .success-card p {
+
+                font-size: 13px;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+    <div class="success-card">
+
+
+        <!-- SUCCESS ICON -->
+
+        <div class="success-icon">
+
+            <i class="bi bi-check-lg"></i>
+
+        </div>
+
+
+        <!-- TITLE -->
+
+        <h1>
+            Registration Successful!
+        </h1>
+
+
+        <!-- MESSAGE -->
+
+        <p>
+
+            Your Youth Festival registration has been
+            successfully submitted.
+
+            <br>
+
+            Please keep your details safe for future reference.
+
+        </p>
+
+
+        <!-- BUTTON -->
+
+        <a href="/student-dashboard" class="home-btn">
+
+            <i class="bi bi-arrow-left"></i>
+
+            Back to Home
+
+        </a>
+
+
+        <!-- BRAND -->
+
+        <div class="brand">
+
+            Powered by <strong>AttendEase</strong>
+
+        </div>
+
+
+    </div>
+
+
+</body>
+
+</html>

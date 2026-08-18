@@ -6,6 +6,8 @@ const connectDB = require("./config/db");
 
 const Student = require("./models/Student");
 
+const Fest = require("./models/fest");
+
 const Attendance = require("./models/Attendance");
 
 const AttendanceSession = require("./models/AttendanceSession");
@@ -162,6 +164,89 @@ mobile: req.body.mobile,
     }
 
 });
+app.get("/fest", (req, res) => {
+
+    res.render("fest");
+
+});
+
+
+app.post("/fest", async (req, res) => {
+
+    try {
+
+        // Check if roll number is already registered
+        const existingRoll = await Fest.findOne({
+            rollNo: req.body.rollNo
+        });
+
+        if (existingRoll) {
+            return res.send("Roll Number already registered for the Youth Festival.");
+        }
+
+
+        // Create new Youth Festival registration
+        const fest = new Fest({
+
+            name: req.body.name,
+
+            fatherName: req.body.fatherName,
+
+            rollNo: req.body.rollNo,
+
+            semester: req.body.semester,
+
+            section: req.body.section,
+
+            department: req.body.department,
+
+            event: req.body.event,
+
+            mobile: req.body.mobile
+
+        });
+
+
+        // Save registration
+        await fest.save();
+
+
+        // Success
+        res.render("success");
+
+
+    } catch (err) {
+
+        console.log(err);
+
+        res.status(500).send("Youth Festival Registration Failed.");
+
+    }
+
+});
+
+app.get("/teacher-fest", async (req, res) => {
+
+    try {
+
+        const festStudents = await Fest.find().sort({
+            event: 1,
+            name: 1
+        });
+
+        res.render("teacher-fest", {
+            festStudents
+        });
+
+    } catch (err) {
+
+        console.log(err);
+
+        res.send("Unable to load festival registrations.");
+
+    }
+
+});
 
 app.get("/admin-login", (req, res) => {
 
@@ -314,6 +399,7 @@ app.get("/student-dashboard", async (req, res) => {
     });
 
 });
+
 
 app.get("/student-profile", (req, res) => {
 
