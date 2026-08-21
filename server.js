@@ -43,26 +43,144 @@ io.on("connection", (socket) => {
     // STUDENT JOIN
     // ===============================
 
-    socket.on("studentJoin", (studentData) => {
+    socket.on("studentJoin", async (studentData) => {
 
-        if (!studentData || !studentData._id) {
+    if (!studentData || !studentData._id) {
+        return;
+    }
+
+    const studentId = studentData._id.toString();
+
+    // Save student as online
+    onlineStudents.set(studentId, socket.id);
+
+    // Mark messages sent to this student as delivered
+    const undeliveredMessages = await Message.find({
+        receiver: studentId,
+        status: "sent"
+    });
+
+    for (const msg of undeliveredMessages) {
+
+        msg.status = "delivered";
+        await msg.save();
+
+        // Tell sender instantly
+        io.to(`student:${msg.sender.toString()}`).emit(
+            "messageDelivered",
+            {
+                messageId: msg._id.toString()
+            }
+        );
+    }
+
+    // YOUR EXISTING CODE CONTINUES HERE...
+        
+
+        // ===============================
+// MESSAGE DELIVERED
+// ===============================
+
+socket.on("messageDelivered", async (data) => {
+    try {
+
+        if (!data || !data.messageId) {
             return;
         }
 
-        const studentId = studentData._id.toString();
-
-        // Save student as online
-        onlineStudents.set(studentId, socket.id);
-
-        // Private room for this student
-        const studentRoom = `student:${studentId}`;
-
-        socket.join(studentRoom);
-
-        console.log(
-            "Student joined private room:",
-            studentRoom
+        const updatedMessage = await Message.findByIdAndUpdate(
+            data.messageId,
+            {
+                $set: {
+                    status: "delivered"
+                }
+            },
+            { new: true }
         );
+
+        if (!updatedMessage) {
+            return;
+        }
+
+        // Tell the sender that message was delivered
+        io.to(`student:${updatedMessage.sender}`).emit(
+            "messageDelivered",
+            {
+                messageId: updatedMessage._id.toString()
+            }
+        );
+
+    } catch (error) {
+        console.error(
+            "Message delivered error:",
+            error
+        );
+    }
+});
+
+// ===============================
+// MESSAGE READ
+// ===============================
+
+socket.on("markMessagesRead", async (data) => {
+
+    try {
+
+        if (
+            !data ||
+            !data.studentId ||
+            !data.otherStudentId
+        ) {
+            return;
+        }
+
+        const messages = await Message.find({
+            sender: data.otherStudentId,
+            receiver: data.studentId,
+            status: { $ne: "read" }
+        }).select("_id");
+
+        if (messages.length === 0) {
+            return;
+        }
+
+        const messageIds = messages.map(
+            message => message._id
+        );
+
+        await Message.updateMany(
+            {
+                _id: { $in: messageIds }
+            },
+            {
+                $set: {
+                    status: "read"
+                }
+            }
+        );
+
+        // Tell the sender EXACTLY which messages were read
+        io.to(`student:${data.otherStudentId}`).emit(
+            "messagesRead",
+            {
+                messageIds: messageIds.map(
+                    id => id.toString()
+                )
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Mark messages read error:",
+            error
+        );
+
+    }
+
+});
+
+
 
         // ===============================
         // TELL NEW STUDENT WHO IS ALREADY ONLINE
@@ -1281,12 +1399,11 @@ app.post("/messages", async (req, res) => {
 
         }
 
-        const newMessage = await Message.create({
-
+const newMessage = await Message.create({
     sender,
     receiver,
-    message: message.trim()
-
+    message: message.trim(),
+    status: "sent"
 });
 //debug
 console.log("MESSAGE CREATED:");
@@ -1299,10 +1416,16 @@ console.log("Message:", newMessage.message);
 io.to(`student:${receiver}`).emit("newMessage", {
 
     _id: newMessage._id,
+
     sender: sender.toString(),
+
     receiver: receiver.toString(),
+
     message: newMessage.message,
-    createdAt: newMessage.createdAt
+
+    createdAt: newMessage.createdAt,
+
+    status: newMessage.status
 
 });
 

@@ -600,3 +600,40 @@ body {
         opacity: 1;
     }
 }
+/* =========================
+   CHAT DATE SEPARATOR
+========================= */
+
+.chat-date {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 18px 0;
+}
+
+.chat-date span {
+    background: rgba(255, 255, 255, 0.85);
+    color: #6c757d;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    padding: 6px 12px;
+    border-radius: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    backdrop-filter: blur(8px);
+}
+/* =========================
+   MESSAGE TICKS
+========================= */
+
+.message-ticks {
+    display: inline-block;
+    margin-left: 5px;
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.75);
+}
+
+.message-ticks.read {
+    color: #53bdeb;
+}

@@ -105,32 +105,103 @@
         <% } %>
 
 
-        <% messages.forEach(msg => { %>
+        <% let lastDate = ""; %>
+
+<% messages.forEach(msg => { %>
+
+    <%
+        const messageDate = new Date(msg.createdAt);
+
+        const dateKey = messageDate.toLocaleDateString("en-IN", {
+            timeZone: "Asia/Kolkata"
+        });
+
+        let dateLabel = "";
+
+        const today = new Date();
+
+        const todayKey = today.toLocaleDateString("en-IN", {
+            timeZone: "Asia/Kolkata"
+        });
+
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        const yesterdayKey = yesterday.toLocaleDateString("en-IN", {
+            timeZone: "Asia/Kolkata"
+        });
+
+        if (dateKey === todayKey) {
+            dateLabel = "TODAY";
+        } 
+        else if (dateKey === yesterdayKey) {
+            dateLabel = "YESTERDAY";
+        } 
+        else {
+            dateLabel = messageDate.toLocaleDateString("en-IN", {
+                timeZone: "Asia/Kolkata",
+                day: "numeric",
+                month: "long",
+                year: "numeric"
+            }).toUpperCase();
+        }
+    %>
+
+    <% if (dateKey !== lastDate) { %>
+
+        <div class="chat-date">
+            <span>
+                <%= dateLabel %>
+            </span>
+        </div>
+
+        <% lastDate = dateKey; %>
+
+    <% } %>
 
 
-            <% const isSent =
-                msg.sender.toString() ===
-                currentStudent._id.toString();
-            %>
+    <%
+        const isSent =
+            msg.sender.toString() ===
+            currentStudent._id.toString();
+    %>
 
 
-            <div class="message <%= isSent ? 'sent' : 'received' %>">
+    <div
+        class="message <%= isSent ? 'sent' : 'received' %>"
+        data-message-id="<%= msg._id %>"
+    >
 
-                <%= msg.message %>
+        <%= msg.message %>
 
-                <span class="message-time">
+        <span class="message-time">
 
-                    <%= new Date(msg.createdAt).toLocaleTimeString([], {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    }) %>
+    <%= new Date(msg.createdAt).toLocaleTimeString("en-IN", {
+        timeZone: "Asia/Kolkata",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true
+    }) %>
 
-                </span>
+    <% if (isSent) { %>
 
-            </div>
+        <span
+            class="message-ticks <%= msg.status === 'read' ? 'read' : '' %>"
+            data-message-id="<%= msg._id %>"
+        >
+            <%= msg.status === "sent" ? "✓" : "✓✓" %>
+        </span>
+
+    <% } %>
+
+</span>
+
+    </div>
+
+<% }) %>
 
 
-        <% }) %>
+       
 
 
     </div>
@@ -334,6 +405,12 @@ socket.on("newMessage", (data) => {
             "received"
         );
 
+        // Tell server that this message reached
+// the receiver's browser
+socket.emit("messageDelivered", {
+    messageId: data._id
+});
+
         // Mark this conversation as READ in MongoDB
         socket.emit("markMessagesRead", {
             studentId: currentStudentId,
@@ -365,6 +442,52 @@ socket.emit("studentJoin", {
 
 });
 
+// ===============================
+// MESSAGE DELIVERED
+// ===============================
+
+socket.on("messageDelivered", (data) => {
+
+    const tick = document.querySelector(
+        `.message-ticks[data-message-id="${data.messageId}"]`
+    );
+
+    if (!tick) {
+        return;
+    }
+
+    tick.textContent = "✓✓";
+
+});
+
+// ===============================
+// MESSAGES READ
+// ===============================
+
+socket.on("messagesRead", (data) => {
+
+    if (!data || !data.messageIds) {
+        return;
+    }
+
+    data.messageIds.forEach(messageId => {
+
+        const tick = document.querySelector(
+            `.message-ticks[data-message-id="${messageId}"]`
+        );
+
+        if (!tick) {
+            return;
+        }
+
+        tick.textContent = "✓✓";
+
+        tick.classList.add("read");
+
+    });
+
+});
+
 
 // ===============================
 // SCROLL
@@ -386,38 +509,58 @@ scrollToBottom();
 
 function addMessage(message, type) {
 
-    const div =
-        document.createElement("div");
+    const div = document.createElement("div");
 
-    div.className =
-        `message ${type}`;
+    div.className = `message ${type}`;
 
-    const time =
-        new Date(message.createdAt)
-            .toLocaleTimeString([], {
+    const time = new Date(message.createdAt)
+        .toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit"
+        });
 
-                hour: "2-digit",
-                minute: "2-digit"
+    let tickHtml = "";
 
-            });
+    // Show ticks only for sent messages
+    if (type === "sent") {
+
+        tickHtml = `
+            <span
+                class="message-ticks"
+                data-message-id="${message._id}"
+            >
+                ✓
+            </span>
+        `;
+    }
 
     div.innerHTML = `
-
         ${escapeHtml(message.message)}
 
         <span class="message-time">
-
             ${time}
-
+            ${tickHtml}
         </span>
-
     `;
 
     messagesContainer.appendChild(div);
 
     scrollToBottom();
-
 }
+
+
+socket.on("messageDelivered", (data) => {
+
+    console.log("MESSAGE DELIVERED:", data);
+
+    const tick = document.querySelector(
+        `.message-ticks[data-message-id="${data.messageId}"]`
+    );
+
+    if (!tick) return;
+
+    tick.innerHTML = "✓✓";
+});
 
 
 // ===============================

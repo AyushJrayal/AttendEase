@@ -30,10 +30,24 @@ const messageSchema = new mongoose.Schema({
         default: ""
     },
 
+    // SENT / DELIVERED / READ
     status: {
         type: String,
         enum: ["sent", "delivered", "read"],
         default: "sent"
+    },
+
+    // EDIT MESSAGE
+    edited: {
+        type: Boolean,
+        default: false
+    },
+
+    // REPLY MESSAGE
+    replyTo: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Message",
+        default: null
     }
 
 }, { timestamps: true });
