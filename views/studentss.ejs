@@ -121,7 +121,7 @@
 
         table {
             margin: 0 !important;
-            min-width: 700px;
+            min-width: 820px;
         }
 
         thead th {
@@ -202,6 +202,33 @@
 
         }
 
+        .message-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    padding: 8px 14px;
+
+    background: #0E6B3F;
+    color: white;
+
+    border-radius: 10px;
+
+    text-decoration: none;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    transition: 0.2s ease;
+}
+
+.message-btn:hover {
+    background: #09552f;
+    color: white;
+    transform: translateY(-1px);
+}
+
     </style>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
@@ -262,6 +289,9 @@
                         <th>Semester</th>
 
                         <th>Department</th>
+                        
+                        <th>Action</th>
+
 
                     </tr>
 
@@ -298,6 +328,21 @@
                                 <%= student.department %>
 
                             </td>
+
+                            <td>
+    <% if (student._id.toString() !== currentStudentId) { %>
+
+        <a
+            href="/chat/<%= student._id %>"
+            class="message-btn">
+
+            <i class="bi bi-chat-dots-fill"></i>
+            Message
+
+        </a>
+
+    <% } %>
+</td>
 
                            
                         </tr>

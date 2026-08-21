@@ -12,6 +12,8 @@ const Attendance = require("./models/Attendance");
 
 const AttendanceSession = require("./models/AttendanceSession");
 
+const Message = require("./models/Message");
+
 const Timetable = require("./models/Timetable");
 
 const Teacher = require("./models/Teacher");
@@ -26,30 +28,64 @@ const { Server } = require("socket.io");
 const server = http.createServer(app);
 
 const io = new Server(server);
-
+ 
 io.on("connection", (socket) => {
 
-    console.log("A user connected:", socket.id);
+    console.log(
+        "A user connected:",
+        socket.id
+    );
+
 
     socket.on("studentJoin", (studentData) => {
 
-        if (!studentData) {
+        if (!studentData || !studentData._id) {
+
             return;
+
         }
 
-        const roomName = buildRoomName(
-            studentData.department,
-            studentData.semester,
-            studentData.section
-        );
 
-        socket.join(roomName);
-        socket.join("all-students");   // every student also joins this global room
+        // Private room
+        const studentRoom =
+            `student:${studentData._id}`;
+
+
+        socket.join(studentRoom);
+
 
         console.log(
-            "Student joined room:",
-            roomName
+            "Student joined private room:",
+            studentRoom
         );
+
+
+        // Join class room if information exists
+        if (
+            studentData.department &&
+            studentData.semester &&
+            studentData.section
+        ) {
+
+            const roomName =
+                buildRoomName(
+                    studentData.department,
+                    studentData.semester,
+                    studentData.section
+                );
+
+
+            socket.join(roomName);
+
+            socket.join("all-students");
+
+
+            console.log(
+                "Student joined class room:",
+                roomName
+            );
+
+        }
 
     });
 
@@ -65,6 +101,8 @@ function escapeRegex(str) {
 
 
 app.use(express.urlencoded({ extended: true }));
+
+app.use(express.json());
 
 app.use(session({
 
@@ -913,10 +951,18 @@ app.get("/students", async (req, res) => {
 
 app.get("/studentss", async (req, res) => {
 
+    if (!req.session.student) {
+        return res.redirect("/login");
+    }
+
     const students = await Student.find();
 
     res.render("studentss", {
-        students: students
+
+        students: students,
+
+        currentStudentId: req.session.student._id.toString()
+
     });
 
 });
@@ -984,6 +1030,212 @@ app.get("/create-teacher", async (req, res) => {
         console.log(err);
 
         res.send("Teacher creation failed");
+
+    }
+
+});
+
+//message//
+app.get("/messages/:studentId", async (req, res) => {
+
+    try {
+
+        // Student must be logged in
+        if (!req.session.student) {
+            return res.status(401).json({
+                success: false,
+                message: "Please login first."
+            });
+        }
+
+        const currentStudentId = req.session.student._id;
+        const otherStudentId = req.params.studentId;
+
+        const messages = await Message.find({
+
+            $or: [
+
+                {
+                    sender: currentStudentId,
+                    receiver: otherStudentId
+                },
+
+                {
+                    sender: otherStudentId,
+                    receiver: currentStudentId
+                }
+
+            ]
+
+        }).sort({
+            createdAt: 1
+        });
+
+        res.json({
+            success: true,
+            messages
+        });
+
+    } catch (error) {
+
+        console.error("Message loading error:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Unable to load messages."
+        });
+
+    }
+
+});
+
+app.post("/messages", async (req, res) => {
+
+    try {
+
+        // Student must be logged in
+        if (!req.session.student) {
+            return res.status(401).json({
+                success: false,
+                message: "Please login first."
+            });
+        }
+
+        const sender = req.session.student._id;
+        const { receiver, message } = req.body;
+
+        // Basic validation
+        if (!receiver || !message || !message.trim()) {
+
+            return res.status(400).json({
+                success: false,
+                message: "Message cannot be empty."
+            });
+
+        }
+
+        // Check receiver exists
+        const student = await Student.findById(receiver);
+
+        if (!student) {
+
+            return res.status(404).json({
+                success: false,
+                message: "Student not found."
+            });
+
+        }
+
+        const newMessage = await Message.create({
+
+    sender,
+    receiver,
+    message: message.trim()
+
+});
+
+// Send message instantly to receiver
+io.to(`student:${receiver}`).emit("newMessage", {
+
+    _id: newMessage._id,
+    sender: sender.toString(),
+    receiver: receiver.toString(),
+    message: newMessage.message,
+    createdAt: newMessage.createdAt
+
+});
+
+// Also send it back to sender's other connected tabs/devices
+io.to(`student:${sender}`).emit("messageSent", {
+
+    _id: newMessage._id,
+    sender: sender.toString(),
+    receiver: receiver.toString(),
+    message: newMessage.message,
+    createdAt: newMessage.createdAt
+
+});
+
+res.json({
+
+    success: true,
+    message: newMessage
+
+});
+
+    } catch (error) {
+
+        console.error("Send message error:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Unable to send message."
+        });
+
+    }
+
+});
+
+// ================= CHAT PAGE =================
+
+app.get("/chat/:studentId", async (req, res) => {
+
+    try {
+
+        // Student must be logged in
+        if (!req.session.student) {
+            return res.redirect("/login");
+        }
+
+        const currentStudent = req.session.student;
+        const otherStudentId = req.params.studentId;
+
+        // Don't allow messaging yourself
+        if (currentStudent._id.toString() === otherStudentId) {
+            return res.redirect("/studentss");
+        }
+
+        // Find the student we want to chat with
+        const otherStudent = await Student.findById(otherStudentId);
+
+        if (!otherStudent) {
+            return res.status(404).send("Student not found.");
+        }
+
+        // Get previous conversation
+        const messages = await Message.find({
+
+            $or: [
+
+                {
+                    sender: currentStudent._id,
+                    receiver: otherStudent._id
+                },
+
+                {
+                    sender: otherStudent._id,
+                    receiver: currentStudent._id
+                }
+
+            ]
+
+        }).sort({
+            createdAt: 1
+        });
+
+        res.render("chat", {
+
+            currentStudent,
+            otherStudent,
+            messages
+
+        });
+
+    } catch (error) {
+
+        console.error("Chat page error:", error);
+
+        res.status(500).send("Unable to open chat.");
 
     }
 
