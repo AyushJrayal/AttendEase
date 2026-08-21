@@ -16,15 +16,26 @@ const messageSchema = new mongoose.Schema({
 
     message: {
         type: String,
-        required: true,
-        trim: true
+        default: ""
     },
 
-    createdAt: {
-        type: Date,
-        default: Date.now
+    mediaUrl: {
+        type: String,
+        default: ""
+    },
+
+    mediaType: {
+        type: String,
+        enum: ["", "image"],
+        default: ""
+    },
+
+    status: {
+        type: String,
+        enum: ["sent", "delivered", "read"],
+        default: "sent"
     }
 
-});
+}, { timestamps: true });
 
 module.exports = mongoose.model("Message", messageSchema);

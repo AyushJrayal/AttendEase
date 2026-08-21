@@ -40,41 +40,28 @@
         }
 
         .chat-container {
-
-            width: 100%;
-
-            max-width: 500px;
-
-            height: 100vh;
-
-            margin: auto;
-
-            background: white;
-
-            display: flex;
-
-            flex-direction: column;
-
-        }
+    width: 100%;
+    max-width: 500px;
+    height: 100dvh;
+    margin: auto;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
 
 
         /* HEADER */
 
         .chat-header {
-
-            background: #0E6B3F;
-
-            color: white;
-
-            padding: 15px;
-
-            display: flex;
-
-            align-items: center;
-
-            gap: 12px;
-
-        }
+    background: #0E6B3F;
+    color: white;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
 
         .back {
 
@@ -205,18 +192,13 @@
         /* INPUT */
 
         .chat-input {
-
-            padding: 10px;
-
-            background: white;
-
-            border-top: 1px solid #eee;
-
-            display: flex;
-
-            gap: 8px;
-
-        }
+    padding: 10px;
+    background: white;
+    border-top: 1px solid #eee;
+    display: flex;
+    gap: 8px;
+    flex-shrink: 0;
+}
 
         .chat-input input {
 
@@ -270,6 +252,27 @@
             }
 
         }
+        .status-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #aaa;
+    margin-right: 5px;
+}
+
+.online-status {
+    color: #d8ffe8;
+}
+
+.online-status .status-dot {
+    background: #45e878;
+    box-shadow: 0 0 6px rgba(69, 232, 120, .8);
+}
+
+.offline-status {
+    color: rgba(255,255,255,.7);
+}
 
     </style>
 
@@ -310,11 +313,14 @@
 
             </h5>
 
-            <small>
+<small id="onlineStatus" class="offline-status">
+    <span class="status-dot"></span>
+    Offline
+</small>
 
-                Semester <%= otherStudent.semester %>
-
-            </small>
+<small id="typingStatus" style="display:none;">
+    Typing...
+</small>
 
         </div>
 
@@ -430,12 +436,169 @@ const receiverId =
 const currentStudentId =
     "<%= currentStudent._id %>";
 
+    
+
 
 // ===============================
 // SOCKET.IO
 // ===============================
 
 const socket = io();
+
+const onlineStatus =
+    document.getElementById("onlineStatus");
+
+const typingStatus =
+    document.getElementById("typingStatus");
+
+// ===============================
+// TYPING INDICATOR
+// ===============================
+
+let typingTimer;
+
+messageInput.addEventListener("input", () => {
+
+    if (messageInput.value.trim().length > 0) {
+
+        // Tell receiver that we are typing
+        socket.emit("typing", {
+            senderId: currentStudentId,
+            receiverId: receiverId
+        });
+
+        // Clear previous timer
+        clearTimeout(typingTimer);
+
+        // Stop typing after 1 second of inactivity
+        typingTimer = setTimeout(() => {
+
+            socket.emit("stopTyping", {
+                senderId: currentStudentId,
+                receiverId: receiverId
+            });
+
+        }, 1000);
+
+    } else {
+
+        // Input became empty
+        clearTimeout(typingTimer);
+
+        socket.emit("stopTyping", {
+            senderId: currentStudentId,
+            receiverId: receiverId
+        });
+    }
+});
+
+// Receiver is typing
+socket.on("userTyping", (data) => {
+
+    if (data.senderId === receiverId) {
+
+        typingStatus.style.display = "block";
+        typingStatus.textContent = "Typing...";
+    }
+});
+
+
+// Receiver stopped typing
+socket.on("userStoppedTyping", (data) => {
+
+    if (data.senderId === receiverId) {
+
+        typingStatus.style.display = "none";
+    }
+});
+
+// Mark all existing messages from this student as read
+socket.emit("markMessagesRead", {
+    studentId: currentStudentId,
+    otherStudentId: receiverId
+});
+
+
+
+
+
+// Friend came online
+socket.on("studentOnline", (data) => {
+
+    console.log("Student online:", data);
+
+    if (data.studentId === receiverId) {
+
+        onlineStatus.innerHTML = `
+            <span class="status-dot"></span>
+            Online
+        `;
+
+        onlineStatus.classList.remove("offline-status");
+        onlineStatus.classList.add("online-status");
+    }
+
+});
+
+socket.on("studentOffline", (data) => {
+
+    console.log("Student offline:", data);
+
+    if (data.studentId === receiverId) {
+
+        onlineStatus.innerHTML = `
+            <span class="status-dot"></span>
+            Offline
+        `;
+
+        onlineStatus.classList.remove("online-status");
+        onlineStatus.classList.add("offline-status");
+    }
+
+});
+
+
+// Friend sent me a message
+socket.on("newMessage", (data) => {
+
+    console.log(
+        "New message received:",
+        data
+    );
+
+    if (
+        data.sender === receiverId &&
+        data.receiver === currentStudentId
+    ) {
+
+        // Show message immediately
+        addMessage(
+            data,
+            "received"
+        );
+
+        // Mark this conversation as READ in MongoDB
+        socket.emit("markMessagesRead", {
+            studentId: currentStudentId,
+            otherStudentId: receiverId
+        });
+
+        // 🔔 Notification sound
+        const sound =
+            document.getElementById("messageSound");
+
+        if (sound) {
+            sound.currentTime = 0;
+
+            sound.play().catch(() => {
+                console.log(
+                    "Sound blocked until user interacts with page."
+                );
+            });
+        }
+    }
+});
+
 
 
 // Tell server which student is connected
@@ -591,33 +754,7 @@ chatForm.addEventListener("submit", async (e) => {
 // ===============================
 // RECEIVE MESSAGE IN REAL TIME
 // ===============================
-
-socket.on("newMessage", (data) => {
-
-    console.log(
-        "New message received:",
-        data
-    );
-
-
-    /*
-     * Only show the message if it
-     * belongs to this conversation.
-     */
-
-    if (
-        data.sender === receiverId &&
-        data.receiver === currentStudentId
-    ) {
-
-        addMessage(
-            data,
-            "received"
-        );
-
-    }
-
-});
+ 
 
 
 // ===============================
@@ -656,6 +793,12 @@ messageInput.addEventListener(
 );
 
 </script>
+
+<audio
+    id="messageSound"
+    preload="auto"
+    src="/sounds/message.mp3">
+</audio>
 
 
 </body>

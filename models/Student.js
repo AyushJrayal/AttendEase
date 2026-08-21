@@ -83,6 +83,7 @@ department: {
         required: true
     }
 
+
 });
 
 module.exports = mongoose.model("Student", studentSchema);

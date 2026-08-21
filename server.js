@@ -28,68 +28,193 @@ const { Server } = require("socket.io");
 const server = http.createServer(app);
 
 const io = new Server(server);
- 
+
+const mongoose = require("mongoose");
+
+const onlineStudents = new Map();
+
+
 io.on("connection", (socket) => {
 
-    console.log(
-        "A user connected:",
-        socket.id
-    );
+    console.log("A user connected:", socket.id);
+    
 
+    // ===============================
+    // STUDENT JOIN
+    // ===============================
 
     socket.on("studentJoin", (studentData) => {
 
         if (!studentData || !studentData._id) {
-
             return;
-
         }
 
+        const studentId = studentData._id.toString();
 
-        // Private room
-        const studentRoom =
-            `student:${studentData._id}`;
+        // Save student as online
+        onlineStudents.set(studentId, socket.id);
 
+        // Private room for this student
+        const studentRoom = `student:${studentId}`;
 
         socket.join(studentRoom);
-
 
         console.log(
             "Student joined private room:",
             studentRoom
         );
 
+        // ===============================
+        // TELL NEW STUDENT WHO IS ALREADY ONLINE
+        // ===============================
 
-        // Join class room if information exists
+        for (const onlineStudentId of onlineStudents.keys()) {
+
+            if (onlineStudentId !== studentId) {
+
+                socket.emit("studentOnline", {
+                    studentId: onlineStudentId
+                });
+
+            }
+
+        }
+
+        // ===============================
+        // CLASS ROOM
+        // ===============================
+
         if (
             studentData.department &&
             studentData.semester &&
             studentData.section
         ) {
 
-            const roomName =
-                buildRoomName(
-                    studentData.department,
-                    studentData.semester,
-                    studentData.section
-                );
-
+            const roomName = buildRoomName(
+                studentData.department,
+                studentData.semester,
+                studentData.section
+            );
 
             socket.join(roomName);
 
+            // Global student room
             socket.join("all-students");
-
 
             console.log(
                 "Student joined class room:",
                 roomName
             );
+        }
+
+        // ===============================
+        // TELL EVERYONE THIS STUDENT IS ONLINE
+        // ===============================
+
+        io.emit("studentOnline", {
+            studentId: studentId
+        });
+
+    });
+
+    // ===============================
+// MARK MESSAGES AS READ
+// ===============================
+
+socket.on("markMessagesRead", async (data) => {
+    try {
+        if (!data || !data.studentId || !data.otherStudentId) {
+            return;
+        }
+
+        await Message.updateMany(
+            {
+                sender: data.otherStudentId,
+                receiver: data.studentId,
+                status: { $ne: "read" }
+            },
+            {
+                $set: {
+                    status: "read"
+                }
+            }
+        );
+
+        console.log(
+            `Messages marked as read: ${data.otherStudentId} -> ${data.studentId}`
+        );
+
+    } catch (error) {
+        console.error("Mark messages read error:", error);
+    }
+});
+
+// ===============================
+// TYPING INDICATOR
+// ===============================
+
+socket.on("typing", (data) => {
+    if (!data || !data.receiverId || !data.senderId) {
+        return;
+    }
+
+    io.to(`student:${data.receiverId}`).emit("userTyping", {
+        senderId: data.senderId
+    });
+});
+
+socket.on("stopTyping", (data) => {
+    if (!data || !data.receiverId || !data.senderId) {
+        return;
+    }
+
+    io.to(`student:${data.receiverId}`).emit("userStoppedTyping", {
+        senderId: data.senderId
+    });
+});
+
+
+    // ===============================
+    // STUDENT DISCONNECT
+    // ===============================
+
+    socket.on("disconnect", () => {
+
+        console.log(
+            "User disconnected:",
+            socket.id
+        );
+
+        // Find which student belongs to this socket
+        for (
+            const [studentId, socketId]
+            of onlineStudents.entries()
+        ) {
+
+            if (socketId === socket.id) {
+
+                onlineStudents.delete(studentId);
+
+                // Tell everyone this student went offline
+                io.emit("studentOffline", {
+                    studentId: studentId
+                });
+
+                console.log(
+                    "Student went offline:",
+                    studentId
+                );
+
+                break;
+            }
 
         }
 
     });
 
 });
+
+
 
 function buildRoomName(department, semester, section) {
     return `${department}-${semester}-${section}`.trim().toLowerCase();
@@ -950,21 +1075,51 @@ app.get("/students", async (req, res) => {
 });
 
 app.get("/studentss", async (req, res) => {
+    try {
+        if (!req.session.student) {
+            return res.redirect("/login");
+        }
 
-    if (!req.session.student) {
-        return res.redirect("/login");
+        const currentStudentId = req.session.student._id;
+
+        const students = await Student.find();
+
+        // Find unread messages for the logged-in student
+        const unreadCounts = await Message.aggregate([
+            {
+                $match: {
+                    receiver: new mongoose.Types.ObjectId(currentStudentId),
+                    status: { $ne: "read" }
+                }
+            },
+            {
+                $group: {
+                    _id: "$sender",
+                    count: { $sum: 1 }
+                }
+            }
+        ]);
+
+        const unreadMap = {};
+
+        unreadCounts.forEach(item => {
+            unreadMap[item._id.toString()] = item.count;
+        });
+
+        console.log("Current student:", currentStudentId.toString());
+        console.log("Unread messages:", unreadCounts);
+        console.log("Unread map:", unreadMap);
+
+        res.render("studentss", {
+            students,
+            currentStudentId: currentStudentId.toString(),
+            unreadMap
+        });
+
+    } catch (error) {
+        console.error("Student list error:", error);
+        res.status(500).send("Unable to load students.");
     }
-
-    const students = await Student.find();
-
-    res.render("studentss", {
-
-        students: students,
-
-        currentStudentId: req.session.student._id.toString()
-
-    });
-
 });
 
 app.get("/edit-student/:id", async (req, res) => {
@@ -1133,6 +1288,12 @@ app.post("/messages", async (req, res) => {
     message: message.trim()
 
 });
+//debug
+console.log("MESSAGE CREATED:");
+console.log("Sender:", newMessage.sender.toString());
+console.log("Receiver:", newMessage.receiver.toString());
+console.log("Status:", newMessage.status);
+console.log("Message:", newMessage.message);
 
 // Send message instantly to receiver
 io.to(`student:${receiver}`).emit("newMessage", {
@@ -1189,6 +1350,20 @@ app.get("/chat/:studentId", async (req, res) => {
 
         const currentStudent = req.session.student;
         const otherStudentId = req.params.studentId;
+
+        // Mark messages from this student as read
+await Message.updateMany(
+    {
+        sender: otherStudentId,
+        receiver: currentStudent._id,
+        status: { $ne: "read" }
+    },
+    {
+        $set: {
+            status: "read"
+        }
+    }
+);
 
         // Don't allow messaging yourself
         if (currentStudent._id.toString() === otherStudentId) {

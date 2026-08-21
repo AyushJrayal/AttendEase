@@ -229,6 +229,21 @@
     transform: translateY(-1px);
 }
 
+.unread-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    padding: 0 6px;
+    margin-left: 8px;
+    border-radius: 50px;
+    background: #dc3545;
+    color: white;
+    font-size: 12px;
+    font-weight: 700;
+}
+
     </style>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
 
@@ -304,12 +319,17 @@
                     <% students.forEach(student => { %>
 
                         <tr>
+<td class="student-name">
+    <%= student.name %>
 
-                            <td class="student-name">
-
-                                <%= student.name %>
-
-                            </td>
+    <% if (unreadMap && unreadMap[student._id.toString()]) { %>
+        <span
+            class="unread-badge"
+            id="unread-<%= student._id %>">
+            <%= unreadMap[student._id.toString()] %>
+        </span>
+    <% } %>
+</td>
 
                             <td>
 
