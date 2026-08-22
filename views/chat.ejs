@@ -693,6 +693,222 @@ messageInput.addEventListener(
 // REPLY / EDIT / DELETE
 // ===============================
 
+let activeReplyId = null;
+let activeEditId = null;
+
+const contextMenu = document.getElementById("msgContextMenu");
+const replyPreview = document.getElementById("replyPreview");
+const replyPreviewText = document.getElementById("replyPreviewText");
+const cancelReplyBtn = document.getElementById("cancelReply");
+
+let longPressTimer;
+let longPressTarget = null;
+
+// --- Open context menu (long-press mobile / right-click desktop) ---
+
+function openContextMenu(x, y, messageEl) {
+
+    longPressTarget = messageEl;
+
+    const isMine = messageEl.dataset.sender === currentStudentId;
+    const isDeleted = messageEl.classList.contains("deleted");
+
+    const editItem = contextMenu.querySelector('[data-action="edit"]');
+    const deleteItem = contextMenu.querySelector('[data-action="delete"]');
+
+    editItem.style.display = (isMine && !isDeleted) ? "flex" : "none";
+    deleteItem.style.display = (isMine && !isDeleted) ? "flex" : "none";
+
+    contextMenu.style.display = "block";
+
+    const menuWidth = 160;
+    const menuHeight = 130;
+
+    let left = x;
+    let top = y;
+
+    if (left + menuWidth > window.innerWidth) {
+        left = window.innerWidth - menuWidth - 10;
+    }
+    if (top + menuHeight > window.innerHeight) {
+        top = window.innerHeight - menuHeight - 10;
+    }
+
+    contextMenu.style.left = `${left}px`;
+    contextMenu.style.top = `${top}px`;
+}
+
+function closeContextMenu() {
+    contextMenu.style.display = "none";
+    longPressTarget = null;
+}
+
+document.addEventListener("click", (e) => {
+    if (!contextMenu.contains(e.target)) {
+        closeContextMenu();
+    }
+});
+
+// Right-click (desktop)
+messagesContainer.addEventListener("contextmenu", (e) => {
+
+    const msgEl = e.target.closest(".message");
+    if (!msgEl) return;
+
+    e.preventDefault();
+    openContextMenu(e.clientX, e.clientY, msgEl);
+});
+
+// --- Menu item actions ---
+
+contextMenu.addEventListener("click", (e) => {
+
+    const item = e.target.closest(".menu-item");
+    if (!item || !longPressTarget) return;
+
+    const action = item.dataset.action;
+    const msgEl = longPressTarget;
+    const messageId = msgEl.dataset.messageId;
+    const rawText = msgEl.dataset.rawText;
+
+    if (action === "reply") {
+        startReply(messageId, rawText);
+    } else if (action === "edit") {
+        startEdit(messageId, rawText);
+    } else if (action === "delete") {
+        deleteMessage(messageId);
+    }
+
+    closeContextMenu();
+});
+
+// --- Reply flow ---
+
+function startReply(messageId, text) {
+
+    activeEditId = null;
+    activeReplyId = messageId;
+
+    replyPreviewText.textContent = text;
+    replyPreview.style.display = "flex";
+
+    messageInput.focus();
+}
+
+cancelReplyBtn.addEventListener("click", () => {
+    activeReplyId = null;
+    replyPreview.style.display = "none";
+});
+
+// --- Edit flow ---
+
+function startEdit(messageId, text) {
+
+    activeReplyId = null;
+    replyPreview.style.display = "none";
+
+    activeEditId = messageId;
+
+    messageInput.value = text;
+    messageInput.classList.add("editing-mode");
+    messageInput.focus();
+}
+
+function cancelEdit() {
+    activeEditId = null;
+    messageInput.value = "";
+    messageInput.classList.remove("editing-mode");
+}
+
+// --- Delete flow ---
+
+async function deleteMessage(messageId) {
+
+    if (!confirm("Delete this message?")) return;
+
+    try {
+
+        const response = await fetch(`/messages/${messageId}`, {
+            method: "DELETE"
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            alert(data.message || "Unable to delete message.");
+            return;
+        }
+
+        applyDeletedUI(messageId);
+
+    } catch (error) {
+        console.error("Delete message error:", error);
+        alert("Unable to delete message.");
+    }
+}
+
+function applyDeletedUI(messageId) {
+
+    const el = document.querySelector(`.message[data-message-id="${messageId}"]`);
+    if (!el) return;
+
+    el.classList.add("deleted");
+    el.dataset.rawText = "";
+
+    const textSpan = el.querySelector(".message-text");
+    if (textSpan) {
+        textSpan.innerHTML = "<i>This message was deleted</i>";
+    }
+
+    const replyQuote = el.querySelector(".reply-quote");
+    if (replyQuote) replyQuote.remove();
+}
+
+// --- Edit received via socket ---
+
+socket.on("messageEdited", (data) => {
+
+    const el = document.querySelector(`.message[data-message-id="${data._id}"]`);
+    if (!el) return;
+
+    el.dataset.rawText = data.message;
+
+    const textSpan = el.querySelector(".message-text");
+    if (textSpan) textSpan.textContent = data.message;
+
+    if (!el.querySelector(".edited-label")) {
+        const timeSpan = el.querySelector(".message-time");
+        const label = document.createElement("span");
+        label.className = "edited-label";
+        label.textContent = "edited";
+        timeSpan.parentNode.insertBefore(label, timeSpan);
+    }
+});
+
+// --- Delete received via socket ---
+
+socket.on("messageDeleted", (data) => {
+    applyDeletedUI(data._id);
+});
+
+// --- Seen status update ---
+
+socket.on("messagesRead", (data) => {
+
+    if (!data || !data.messageIds) return;
+
+    data.messageIds.forEach(messageId => {
+
+        const seenSpan = document.querySelector(
+            `.message-seen[data-message-id="${messageId}"]`
+        );
+
+        if (seenSpan) {
+            seenSpan.textContent = "Seen";
+        }
+    });
+});
+
 // ===============================
 // SWIPE TO REPLY + LONG PRESS MENU (mobile)
 // ===============================
@@ -730,13 +946,11 @@ messagesContainer.addEventListener("touchmove", (e) => {
     const deltaX = touch.clientX - touchStartX;
     const deltaY = touch.clientY - touchStartY;
 
-    // Only treat as swipe if horizontal movement dominates
     if (Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY)) {
 
         isSwiping = true;
         clearTimeout(longPressTimer);
 
-        // Only allow right swipe, cap the distance
         const clamped = Math.max(0, Math.min(deltaX, 70));
 
         currentSwipeEl.classList.add("swiping");
@@ -760,7 +974,6 @@ messagesContainer.addEventListener("touchend", () => {
         currentSwipeEl.style.transform = "";
         currentSwipeEl.style.opacity = "";
 
-        // Swiped far enough → trigger reply
         if (distance > 40) {
 
             const messageId = currentSwipeEl.dataset.messageId;
@@ -777,7 +990,6 @@ messagesContainer.addEventListener("touchend", () => {
     isSwiping = false;
 
 });
-
 </script>
 
 
