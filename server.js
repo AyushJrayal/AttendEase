@@ -1373,7 +1373,6 @@ app.post("/messages", async (req, res) => {
 
     try {
 
-        // Student must be logged in
         if (!req.session.student) {
             return res.status(401).json({
                 success: false,
@@ -1382,77 +1381,58 @@ app.post("/messages", async (req, res) => {
         }
 
         const sender = req.session.student._id;
-        const { receiver, message } = req.body;
+        const { receiver, message, replyTo } = req.body;
 
-        // Basic validation
         if (!receiver || !message || !message.trim()) {
-
             return res.status(400).json({
                 success: false,
                 message: "Message cannot be empty."
             });
-
         }
 
-        // Check receiver exists
         const student = await Student.findById(receiver);
 
         if (!student) {
-
             return res.status(404).json({
                 success: false,
                 message: "Student not found."
             });
-
         }
 
-const newMessage = await Message.create({
-    sender,
-    receiver,
-    message: message.trim(),
-    status: "sent"
-});
-//debug
-console.log("MESSAGE CREATED:");
-console.log("Sender:", newMessage.sender.toString());
-console.log("Receiver:", newMessage.receiver.toString());
-console.log("Status:", newMessage.status);
-console.log("Message:", newMessage.message);
+        const newMessage = await Message.create({
+            sender,
+            receiver,
+            message: message.trim(),
+            status: "sent",
+            replyTo: replyTo || null
+        });
 
-// Send message instantly to receiver
-io.to(`student:${receiver}`).emit("newMessage", {
+        // Populate replyTo so we can send the quoted text along
+        await newMessage.populate("replyTo", "message sender");
 
-    _id: newMessage._id,
+        const payload = {
+            _id: newMessage._id,
+            sender: sender.toString(),
+            receiver: receiver.toString(),
+            message: newMessage.message,
+            createdAt: newMessage.createdAt,
+            status: newMessage.status,
+            replyTo: newMessage.replyTo
+                ? {
+                    _id: newMessage.replyTo._id,
+                    message: newMessage.replyTo.message,
+                    sender: newMessage.replyTo.sender.toString()
+                }
+                : null
+        };
 
-    sender: sender.toString(),
+        io.to(`student:${receiver}`).emit("newMessage", payload);
+        io.to(`student:${sender}`).emit("messageSent", payload);
 
-    receiver: receiver.toString(),
-
-    message: newMessage.message,
-
-    createdAt: newMessage.createdAt,
-
-    status: newMessage.status
-
-});
-
-// Also send it back to sender's other connected tabs/devices
-io.to(`student:${sender}`).emit("messageSent", {
-
-    _id: newMessage._id,
-    sender: sender.toString(),
-    receiver: receiver.toString(),
-    message: newMessage.message,
-    createdAt: newMessage.createdAt
-
-});
-
-res.json({
-
-    success: true,
-    message: newMessage
-
-});
+        res.json({
+            success: true,
+            message: payload
+        });
 
     } catch (error) {
 
@@ -1461,6 +1441,139 @@ res.json({
         res.status(500).json({
             success: false,
             message: "Unable to send message."
+        });
+
+    }
+
+});
+
+
+// ================= EDIT MESSAGE =================
+
+app.put("/messages/:id", async (req, res) => {
+
+    try {
+
+        if (!req.session.student) {
+            return res.status(401).json({
+                success: false,
+                message: "Please login first."
+            });
+        }
+
+        const { message } = req.body;
+
+        if (!message || !message.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Message cannot be empty."
+            });
+        }
+
+        const existing = await Message.findById(req.params.id);
+
+        if (!existing) {
+            return res.status(404).json({
+                success: false,
+                message: "Message not found."
+            });
+        }
+
+        // Only the sender can edit their own message
+        if (existing.sender.toString() !== req.session.student._id.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: "You can only edit your own messages."
+            });
+        }
+
+        existing.message = message.trim();
+        existing.edited = true;
+
+        await existing.save();
+
+        const payload = {
+            _id: existing._id.toString(),
+            message: existing.message,
+            sender: existing.sender.toString(),
+            receiver: existing.receiver.toString()
+        };
+
+        io.to(`student:${existing.sender}`).emit("messageEdited", payload);
+        io.to(`student:${existing.receiver}`).emit("messageEdited", payload);
+
+        res.json({
+            success: true,
+            message: payload
+        });
+
+    } catch (error) {
+
+        console.error("Edit message error:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Unable to edit message."
+        });
+
+    }
+
+});
+
+// ================= DELETE MESSAGE =================
+
+app.delete("/messages/:id", async (req, res) => {
+
+    try {
+
+        if (!req.session.student) {
+            return res.status(401).json({
+                success: false,
+                message: "Please login first."
+            });
+        }
+
+        const existing = await Message.findById(req.params.id);
+
+        if (!existing) {
+            return res.status(404).json({
+                success: false,
+                message: "Message not found."
+            });
+        }
+
+        if (existing.sender.toString() !== req.session.student._id.toString()) {
+            return res.status(403).json({
+                success: false,
+                message: "You can only delete your own messages."
+            });
+        }
+
+        existing.deleted = true;
+        existing.message = "";
+
+        await existing.save();
+
+        const payload = {
+            _id: existing._id.toString(),
+            sender: existing.sender.toString(),
+            receiver: existing.receiver.toString()
+        };
+
+        io.to(`student:${existing.sender}`).emit("messageDeleted", payload);
+        io.to(`student:${existing.receiver}`).emit("messageDeleted", payload);
+
+        res.json({
+            success: true
+        });
+
+    } catch (error) {
+
+        console.error("Delete message error:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Unable to delete message."
         });
 
     }
@@ -1482,18 +1595,18 @@ app.get("/chat/:studentId", async (req, res) => {
         const otherStudentId = req.params.studentId;
 
         // Mark messages from this student as read
-await Message.updateMany(
-    {
-        sender: otherStudentId,
-        receiver: currentStudent._id,
-        status: { $ne: "read" }
-    },
-    {
-        $set: {
-            status: "read"
-        }
-    }
-);
+        await Message.updateMany(
+            {
+                sender: otherStudentId,
+                receiver: currentStudent._id,
+                status: { $ne: "read" }
+            },
+            {
+                $set: {
+                    status: "read"
+                }
+            }
+        );
 
         // Don't allow messaging yourself
         if (currentStudent._id.toString() === otherStudentId) {
@@ -1524,9 +1637,9 @@ await Message.updateMany(
 
             ]
 
-        }).sort({
-            createdAt: 1
-        });
+        })
+            .sort({ createdAt: 1 })
+            .populate("replyTo", "message sender");
 
         res.render("chat", {
 

@@ -48,6 +48,12 @@ const messageSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Message",
         default: null
+    },
+
+    // DELETED MESSAGE
+        deleted: {
+        type: Boolean,
+        default: false
     }
 
 }, { timestamps: true });
