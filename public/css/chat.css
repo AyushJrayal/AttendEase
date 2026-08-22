@@ -777,3 +777,23 @@ body {
     background: #fff8e1;
     box-shadow: 0 0 0 2px rgba(255, 193, 7, 0.4);
 }
+.message {
+    /* existing styles stay, just add: */
+    transition: transform 0.15s ease-out;
+    touch-action: pan-y;
+}
+
+.message.swiping {
+    transition: none;
+}
+
+.reply-swipe-icon {
+    position: absolute;
+    left: -32px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0;
+    color: #0E6B3F;
+    font-size: 18px;
+    transition: opacity 0.15s;
+}
