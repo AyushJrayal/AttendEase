@@ -918,7 +918,25 @@ let touchStartY = 0;
 let currentSwipeEl = null;
 let isSwiping = false;
 
+messagesContainer.addEventListener("touchstart", (e) => {
 
+    const msgEl = e.target.closest(".message");
+    if (!msgEl) return;
+
+    const touch = e.touches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    currentSwipeEl = msgEl;
+    isSwiping = false;
+
+    longPressTimer = setTimeout(() => {
+        if (!isSwiping) {
+            openContextMenu(touch.clientX, touch.clientY, msgEl);
+            if (navigator.vibrate) navigator.vibrate(30);
+        }
+    }, 450);
+
+}, { passive: true });
 
 messagesContainer.addEventListener("touchmove", (e) => {
 
