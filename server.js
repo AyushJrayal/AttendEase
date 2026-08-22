@@ -51,8 +51,13 @@ io.on("connection", (socket) => {
 
     const studentId = studentData._id.toString();
 
-    // Save student as online
-    onlineStudents.set(studentId, socket.id);
+// Save student as online
+onlineStudents.set(studentId, socket.id);
+
+// Join personal room
+socket.join(`student:${studentId}`);
+
+console.log(`Student joined personal room: student:${studentId}`);
 
     // Mark messages sent to this student as delivered
     const undeliveredMessages = await Message.find({
@@ -228,6 +233,8 @@ socket.on("markMessagesRead", async (data) => {
         // ===============================
         // TELL EVERYONE THIS STUDENT IS ONLINE
         // ===============================
+
+        
 
         io.emit("studentOnline", {
             studentId: studentId
