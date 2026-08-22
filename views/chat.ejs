@@ -918,45 +918,47 @@ let touchStartY = 0;
 let currentSwipeEl = null;
 let isSwiping = false;
 
-messagesContainer.addEventListener("touchstart", (e) => {
 
-    const msgEl = e.target.closest(".message");
-    if (!msgEl) return;
-
-    const touch = e.touches[0];
-    touchStartX = touch.clientX;
-    touchStartY = touch.clientY;
-    currentSwipeEl = msgEl;
-    isSwiping = false;
-
-    longPressTimer = setTimeout(() => {
-        if (!isSwiping) {
-            openContextMenu(touch.clientX, touch.clientY, msgEl);
-            if (navigator.vibrate) navigator.vibrate(30);
-        }
-    }, 450);
-
-}, { passive: true });
 
 messagesContainer.addEventListener("touchmove", (e) => {
 
     if (!currentSwipeEl) return;
 
     const touch = e.touches[0];
+
     const deltaX = touch.clientX - touchStartX;
     const deltaY = touch.clientY - touchStartY;
 
-    if (Math.abs(deltaX) > 10 && Math.abs(deltaX) > Math.abs(deltaY)) {
-
-        isSwiping = true;
-        clearTimeout(longPressTimer);
-
-        const clamped = Math.max(0, Math.min(deltaX, 70));
-
-        currentSwipeEl.classList.add("swiping");
-        currentSwipeEl.style.transform = `translateX(${clamped}px)`;
-        currentSwipeEl.style.opacity = clamped > 15 ? "0.85" : "1";
+    // Ignore vertical scrolling
+    if (Math.abs(deltaX) <= 10 || Math.abs(deltaX) <= Math.abs(deltaY)) {
+        return;
     }
+
+    isSwiping = true;
+    clearTimeout(longPressTimer);
+
+    const isMine = currentSwipeEl.dataset.sender === currentStudentId;
+
+    let swipeDistance = 0;
+
+    if (isMine) {
+
+        // My message → swipe LEFT
+        swipeDistance = Math.max(-70, Math.min(deltaX, 0));
+
+    } else {
+
+        // B's message → swipe RIGHT
+        swipeDistance = Math.max(0, Math.min(deltaX, 70));
+
+    }
+
+    currentSwipeEl.classList.add("swiping");
+
+    currentSwipeEl.style.transform = `translateX(${swipeDistance}px)`;
+
+    currentSwipeEl.style.opacity =
+        Math.abs(swipeDistance) > 15 ? "0.85" : "1";
 
 }, { passive: true });
 
@@ -967,23 +969,42 @@ messagesContainer.addEventListener("touchend", () => {
     if (currentSwipeEl) {
 
         const transform = currentSwipeEl.style.transform;
-        const match = transform.match(/translateX\(([\d.]+)px\)/);
+
+        const match = transform.match(/translateX\((-?[\d.]+)px\)/);
+
         const distance = match ? parseFloat(match[1]) : 0;
 
+        const isMine =
+            currentSwipeEl.dataset.sender === currentStudentId;
+
         currentSwipeEl.classList.remove("swiping");
+
         currentSwipeEl.style.transform = "";
         currentSwipeEl.style.opacity = "";
 
-        if (distance > 40) {
+        // B's message → swipe RIGHT more than 40px
+        // My message → swipe LEFT more than 40px
+
+        if (
+            (!isMine && distance > 40) ||
+            (isMine && distance < -40)
+        ) {
 
             const messageId = currentSwipeEl.dataset.messageId;
             const rawText = currentSwipeEl.dataset.rawText;
 
             if (rawText) {
+
                 startReply(messageId, rawText);
-                if (navigator.vibrate) navigator.vibrate(15);
+
+                if (navigator.vibrate) {
+                    navigator.vibrate(15);
+                }
+
             }
+
         }
+
     }
 
     currentSwipeEl = null;
