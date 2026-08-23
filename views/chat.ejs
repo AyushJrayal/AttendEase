@@ -591,6 +591,27 @@ async function revealChat() {
 
 revealChat();
 
+// ===============================
+// KEYBOARD OPEN/CLOSE HANDLING (MOBILE)
+// ===============================
+
+if (window.visualViewport) {
+
+    window.visualViewport.addEventListener("resize", () => {
+        scrollToBottom();
+    });
+
+}
+
+messageInput.addEventListener("focus", () => {
+
+    // Wait a moment for the keyboard animation to finish opening
+    setTimeout(() => {
+        scrollToBottom();
+    }, 300);
+
+});
+
 
 // ===============================
 // ADD MESSAGE TO CHAT
