@@ -797,3 +797,137 @@ body {
     font-size: 18px;
     transition: opacity 0.15s;
 }
+
+/* =========================
+   ATTACH BUTTON
+========================= */
+.attach-btn {
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #0E6B3F;
+    font-size: 21px;
+    cursor: pointer;
+    border-radius: 50%;
+    transition: background 0.15s;
+}
+
+.attach-btn:hover {
+    background: rgba(14, 107, 63, 0.08);
+}
+
+/* =========================
+   IMAGE PREVIEW BAR
+========================= */
+.image-preview-bar {
+    padding: 10px 14px;
+    background: #eef3f0;
+    border-top: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.image-preview-wrap {
+    position: relative;
+    width: 90px;
+    height: 90px;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.image-preview-wrap img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.cancel-image {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.55);
+    color: white;
+    border: none;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+/* =========================
+   CHAT IMAGE BUBBLE
+========================= */
+.message.has-media {
+    padding: 5px;
+    background: transparent !important;
+    box-shadow: none !important;
+}
+
+.chat-image {
+    display: block;
+    max-width: 240px;
+    max-height: 320px;
+    width: 100%;
+    border-radius: 14px;
+    cursor: pointer;
+    object-fit: cover;
+}
+
+.message.sent .chat-image {
+    border-bottom-right-radius: 5px;
+}
+
+.message.received .chat-image {
+    border-bottom-left-radius: 5px;
+}
+
+/* Time overlay for image messages */
+.message.has-media .message-time {
+    position: relative;
+    margin-top: 3px;
+    padding: 0 4px;
+}
+
+/* =========================
+   FULLSCREEN IMAGE VIEWER
+========================= */
+.image-viewer {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.92);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.image-viewer img {
+    max-width: 92%;
+    max-height: 88%;
+    border-radius: 8px;
+}
+
+.close-viewer {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    color: white;
+    font-size: 18px;
+    cursor: pointer;
+}

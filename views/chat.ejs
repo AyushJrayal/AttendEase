@@ -140,25 +140,45 @@
     %>
 
     <div
-        class="message <%= isSent ? 'sent' : 'received' %> <%= msg.deleted ? 'deleted' : '' %>"
+        class="message <%= isSent ? 'sent' : 'received' %> <%= msg.deleted ? 'deleted' : '' %> <%= msg.mediaType === 'image' ? 'has-media' : '' %>"
         data-message-id="<%= msg._id %>"
         data-sender="<%= msg.sender %>"
         data-raw-text="<%= msg.deleted ? '' : msg.message %>"
+        data-media-url="<%= msg.mediaUrl || '' %>"
+        data-media-type="<%= msg.mediaType || '' %>"
     >
 
         <% if (msg.replyTo) { %>
             <div class="reply-quote">
-                <span><%= msg.replyTo.message %></span>
+                <% if (msg.replyTo.deleted) { %>
+                    <span><i>Message deleted</i></span>
+                <% } else if (msg.replyTo.mediaType === 'image') { %>
+                    <span><i class="bi bi-image"></i> Photo</span>
+                <% } else if (msg.replyTo.mediaType === 'voice') { %>
+                    <span><i class="bi bi-mic-fill"></i> Voice message</span>
+                <% } else { %>
+                    <span><%= msg.replyTo.message %></span>
+                <% } %>
             </div>
         <% } %>
 
-        <span class="message-text">
-            <% if (msg.deleted) { %>
-                <i>This message was deleted</i>
-            <% } else { %>
-                <%= msg.message %>
-            <% } %>
-        </span>
+        <% if (msg.deleted) { %>
+
+            <span class="message-text"><i>This message was deleted</i></span>
+
+        <% } else if (msg.mediaType === "image") { %>
+
+            <img
+                src="<%= msg.mediaUrl %>"
+                class="chat-image"
+                alt="image message"
+                loading="lazy">
+
+        <% } else { %>
+
+            <span class="message-text"><%= msg.message %></span>
+
+        <% } %>
 
         <% if (msg.edited && !msg.deleted) { %>
             <span class="edited-label">edited</span>
@@ -196,6 +216,15 @@
     <span></span>
 </div>
 
+<div id="imagePreviewBar" class="image-preview-bar" style="display:none;">
+    <div class="image-preview-wrap">
+        <img id="imagePreviewThumb" src="" alt="preview">
+        <button type="button" id="cancelImage" class="cancel-image">
+            <i class="bi bi-x-lg"></i>
+        </button>
+    </div>
+</div>
+
 <div id="replyPreview" class="reply-preview" style="display:none;">
     <div class="reply-preview-content">
         <span class="reply-preview-label">Replying to</span>
@@ -211,29 +240,46 @@
     <!-- INPUT -->
 
     <form
-        class="chat-input"
-        id="chatForm">
+    class="chat-input"
+    id="chatForm"
+    enctype="multipart/form-data">
 
-        <input
-            type="text"
-            id="messageInput"
-            placeholder="Type a message..."
-            autocomplete="off"
-            maxlength="1000">
+    <label for="imageInput" class="attach-btn">
+        <i class="bi bi-image-fill"></i>
+    </label>
+    <input
+        type="file"
+        id="imageInput"
+        accept="image/*"
+        style="display:none;">
 
-        <button
-            type="submit"
-            class="send-btn">
+    <input
+        type="text"
+        id="messageInput"
+        placeholder="Type a message..."
+        autocomplete="off"
+        maxlength="1000">
 
-            <i class="bi bi-send-fill"></i>
+    <button
+        type="submit"
+        class="send-btn">
 
-        </button>
+        <i class="bi bi-send-fill"></i>
 
-    </form>
+    </button>
+
+</form>
     <div id="msgContextMenu" class="msg-context-menu" style="display:none;">
     <div class="menu-item" data-action="reply"><i class="bi bi-reply-fill"></i> Reply</div>
     <div class="menu-item" data-action="edit"><i class="bi bi-pencil-fill"></i> Edit</div>
     <div class="menu-item danger" data-action="delete"><i class="bi bi-trash-fill"></i> Delete</div>
+</div>
+
+<div id="imageViewer" class="image-viewer" style="display:none;">
+    <button id="closeViewer" class="close-viewer">
+        <i class="bi bi-x-lg"></i>
+    </button>
+    <img id="viewerImg" src="" alt="full image">
 </div>
 
 
@@ -510,14 +556,31 @@ function addMessage(message, type) {
     div.className = `message ${type}`;
     div.dataset.messageId = message._id;
     div.dataset.sender = message.sender;
-    div.dataset.rawText = message.message;
+    div.dataset.rawText = message.message || "";
+    div.dataset.mediaUrl = message.mediaUrl || "";
+    div.dataset.mediaType = message.mediaType || "";
+
+    if (message.mediaType === "image") {
+        div.classList.add("has-media");
+    }
 
     const time = new Date(message.createdAt)
         .toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
     let replyHtml = "";
     if (message.replyTo) {
-        replyHtml = `<div class="reply-quote"><span>${escapeHtml(message.replyTo.message)}</span></div>`;
+        if (message.replyTo.mediaType === "image") {
+            replyHtml = `<div class="reply-quote"><span><i class="bi bi-image"></i> Photo</span></div>`;
+        } else {
+            replyHtml = `<div class="reply-quote"><span>${escapeHtml(message.replyTo.message)}</span></div>`;
+        }
+    }
+
+    let bodyHtml = "";
+    if (message.mediaType === "image") {
+        bodyHtml = `<img src="${message.mediaUrl}" class="chat-image" alt="image message" loading="lazy">`;
+    } else {
+        bodyHtml = `<span class="message-text">${escapeHtml(message.message)}</span>`;
     }
 
     let tickHtml = "";
@@ -531,7 +594,7 @@ function addMessage(message, type) {
 
     div.innerHTML = `
         ${replyHtml}
-        <span class="message-text">${escapeHtml(message.message)}</span>
+        ${bodyHtml}
         <span class="message-time">
             ${time}
             ${tickHtml}
@@ -541,21 +604,6 @@ function addMessage(message, type) {
     messagesContainer.appendChild(div);
     scrollToBottom();
 }
-
-
-socket.on("messageDelivered", (data) => {
-
-    console.log("MESSAGE DELIVERED:", data);
-
-    const tick = document.querySelector(
-        `.message-ticks[data-message-id="${data.messageId}"]`
-    );
-
-    if (!tick) return;
-
-    tick.innerHTML = "✓✓";
-});
-
 
 // ===============================
 // SEND MESSAGE
@@ -567,10 +615,10 @@ chatForm.addEventListener("submit", async (e) => {
 
     const message = messageInput.value.trim();
 
-    if (!message) return;
-
     // ===== EDIT MODE =====
     if (activeEditId) {
+
+        if (!message) return;
 
         try {
 
@@ -611,18 +659,27 @@ chatForm.addEventListener("submit", async (e) => {
         return;
     }
 
-    // ===== NORMAL SEND (with optional reply) =====
+    // ===== NORMAL SEND (text and/or image, with optional reply) =====
+
+    if (!message && !selectedImageFile) return;
 
     try {
 
+        const formData = new FormData();
+        formData.append("receiver", receiverId);
+        formData.append("message", message);
+
+        if (activeReplyId) {
+            formData.append("replyTo", activeReplyId);
+        }
+
+        if (selectedImageFile) {
+            formData.append("image", selectedImageFile);
+        }
+
         const response = await fetch("/messages", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                receiver: receiverId,
-                message: message,
-                replyTo: activeReplyId
-            })
+            body: formData
         });
 
         const data = await response.json();
@@ -636,6 +693,10 @@ chatForm.addEventListener("submit", async (e) => {
 
         messageInput.value = "";
         messageInput.focus();
+
+        selectedImageFile = null;
+        imageInput.value = "";
+        imagePreviewBar.style.display = "none";
 
         activeReplyId = null;
         replyPreview.style.display = "none";
@@ -1028,6 +1089,67 @@ messagesContainer.addEventListener("touchend", () => {
     currentSwipeEl = null;
     isSwiping = false;
 
+});
+
+// ===============================
+// IMAGE PICKER + PREVIEW
+// ===============================
+
+const imageInput = document.getElementById("imageInput");
+const imagePreviewBar = document.getElementById("imagePreviewBar");
+const imagePreviewThumb = document.getElementById("imagePreviewThumb");
+const cancelImageBtn = document.getElementById("cancelImage");
+
+let selectedImageFile = null;
+
+imageInput.addEventListener("change", () => {
+
+    const file = imageInput.files[0];
+    if (!file) return;
+
+    selectedImageFile = file;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        imagePreviewThumb.src = e.target.result;
+        imagePreviewBar.style.display = "block";
+    };
+    reader.readAsDataURL(file);
+});
+
+cancelImageBtn.addEventListener("click", () => {
+    selectedImageFile = null;
+    imageInput.value = "";
+    imagePreviewBar.style.display = "none";
+});
+
+// ===============================
+// IMAGE FULLSCREEN VIEWER
+// ===============================
+
+const imageViewer = document.getElementById("imageViewer");
+const viewerImg = document.getElementById("viewerImg");
+const closeViewerBtn = document.getElementById("closeViewer");
+
+messagesContainer.addEventListener("click", (e) => {
+
+    const img = e.target.closest(".chat-image");
+    if (!img) return;
+
+    viewerImg.src = img.src;
+    imageViewer.style.display = "flex";
+});
+
+closeViewerBtn.addEventListener("click", () => {
+    imageViewer.style.display = "none";
+    viewerImg.src = "";
+});
+
+imageViewer.addEventListener("click", (e) => {
+    if (e.target === imageViewer) {
+        imageViewer.style.display = "none";
+        viewerImg.src = "";
+    }
 });
 </script>
 

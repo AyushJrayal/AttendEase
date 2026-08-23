@@ -1,6 +1,16 @@
+require("dotenv").config();
+
+console.log("Cloudinary config check:", {
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY ? "present" : "MISSING",
+    api_secret: process.env.CLOUDINARY_API_SECRET ? "present" : "MISSING"
+});
+
 const express = require("express");
 
 const session = require("express-session");
+
+const multer = require("multer");
 
 const connectDB = require("./config/db");
 
@@ -32,6 +42,25 @@ const io = new Server(server);
 const mongoose = require("mongoose");
 
 const onlineStudents = new Map();
+
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("./config/cloudinary");
+
+const storage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: "attendease-chat",
+        resource_type: "auto",
+        allowed_formats: ["jpg", "jpeg", "png", "webp", "mp3", "wav", "m4a", "ogg", "webm"]
+    }
+});
+
+const upload = multer({
+    storage: storage,
+    limits: {
+        fileSize: 15 * 1024 * 1024 // 15MB max
+    }
+});
 
 
 io.on("connection", (socket) => {
@@ -1369,7 +1398,7 @@ app.get("/messages/:studentId", async (req, res) => {
 
 });
 
-app.post("/messages", async (req, res) => {
+app.post("/messages", upload.single("image"), async (req, res) => {
 
     try {
 
@@ -1381,12 +1410,17 @@ app.post("/messages", async (req, res) => {
         }
 
         const sender = req.session.student._id;
+
         const { receiver, message, replyTo } = req.body;
 
-        if (!receiver || !message || !message.trim()) {
+        // ===============================
+        // CHECK RECEIVER
+        // ===============================
+
+        if (!receiver) {
             return res.status(400).json({
                 success: false,
-                message: "Message cannot be empty."
+                message: "Receiver is required."
             });
         }
 
@@ -1399,35 +1433,107 @@ app.post("/messages", async (req, res) => {
             });
         }
 
+        // ===============================
+        // CHECK MESSAGE / IMAGE
+        // ===============================
+
+        const hasText = message && message.trim();
+        const hasImage = req.file;
+
+        if (!hasText && !hasImage) {
+            return res.status(400).json({
+                success: false,
+                message: "Message cannot be empty."
+            });
+        }
+
+        // ===============================
+        // CREATE MESSAGE
+        // ===============================
+
         const newMessage = await Message.create({
+
             sender,
             receiver,
-            message: message.trim(),
+
+            message: hasText ? message.trim() : "",
+
+            mediaUrl: hasImage ? req.file.path : "",
+
+            mediaType: hasImage ? "image" : "",
+
             status: "sent",
+
             replyTo: replyTo || null
+
         });
 
-        // Populate replyTo so we can send the quoted text along
-        await newMessage.populate("replyTo", "message sender");
+        // ===============================
+        // POPULATE REPLY
+        // ===============================
+
+        await newMessage.populate(
+            "replyTo",
+            "message sender mediaUrl mediaType deleted"
+        );
+
+        // ===============================
+        // PAYLOAD
+        // ===============================
 
         const payload = {
+
             _id: newMessage._id,
+
             sender: sender.toString(),
+
             receiver: receiver.toString(),
+
             message: newMessage.message,
+
+            mediaUrl: newMessage.mediaUrl,
+
+            mediaType: newMessage.mediaType,
+
             createdAt: newMessage.createdAt,
+
             status: newMessage.status,
+
             replyTo: newMessage.replyTo
                 ? {
                     _id: newMessage.replyTo._id,
+
                     message: newMessage.replyTo.message,
-                    sender: newMessage.replyTo.sender.toString()
+
+                    sender: newMessage.replyTo.sender.toString(),
+
+                    mediaUrl: newMessage.replyTo.mediaUrl,
+
+                    mediaType: newMessage.replyTo.mediaType,
+
+                    deleted: newMessage.replyTo.deleted
                 }
                 : null
+
         };
 
-        io.to(`student:${receiver}`).emit("newMessage", payload);
-        io.to(`student:${sender}`).emit("messageSent", payload);
+        // ===============================
+        // SOCKET
+        // ===============================
+
+        io.to(`student:${receiver}`).emit(
+            "newMessage",
+            payload
+        );
+
+        io.to(`student:${sender}`).emit(
+            "messageSent",
+            payload
+        );
+
+        // ===============================
+        // RESPONSE
+        // ===============================
 
         res.json({
             success: true,
@@ -1446,7 +1552,6 @@ app.post("/messages", async (req, res) => {
     }
 
 });
-
 
 // ================= EDIT MESSAGE =================
 
@@ -1639,7 +1744,7 @@ app.get("/chat/:studentId", async (req, res) => {
 
         })
             .sort({ createdAt: 1 })
-            .populate("replyTo", "message sender");
+            .populate("replyTo", "message sender mediaUrl mediaType deleted");
 
         res.render("chat", {
 
