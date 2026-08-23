@@ -25,6 +25,8 @@
 
     <script src="/socket.io/socket.io.js"></script>
 
+    
+
 
 
 </head>
@@ -84,25 +86,25 @@
 
         <% if (messages.length === 0) { %>
 
-            <div
-                style="
-                text-align:center;
-                color:#999;
-                margin-top:40px;
-                ">
+    <div
+        style="
+        text-align:center;
+        color:#999;
+        margin-top:40px;
+        ">
 
-                <i
-                    class="bi bi-chat-dots"
-                    style="font-size:35px;">
-                </i>
+        <i
+            class="bi bi-chat-dots"
+            style="font-size:35px;">
+        </i>
 
-                <p>
-                    Start a conversation 👋
-                </p>
+        <p>
+            Start a conversation 👋
+        </p>
 
-            </div>
+    </div>
 
-        <% } %>
+<% } %>
 
 
         <% let lastDate = ""; %>
@@ -535,14 +537,59 @@ socket.on("messagesRead", (data) => {
 // SCROLL
 // ===============================
 
-function scrollToBottom() {
+function scrollToBottom(instant = false) {
 
-    messagesContainer.scrollTop =
-        messagesContainer.scrollHeight;
+    if (instant) {
+        messagesContainer.style.scrollBehavior = "auto";
+    }
+
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+    if (instant) {
+        // Restore smooth behavior for future scrolls (new messages etc.)
+        requestAnimationFrame(() => {
+            messagesContainer.style.scrollBehavior = "smooth";
+        });
+    }
 
 }
 
-scrollToBottom();
+function waitForImagesToLoad() {
+
+    const images = Array.from(messagesContainer.querySelectorAll("img"));
+
+    if (images.length === 0) return Promise.resolve();
+
+    const promises = images.map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => {
+            img.addEventListener("load", resolve, { once: true });
+            img.addEventListener("error", resolve, { once: true });
+        });
+    });
+
+    return Promise.race([
+        Promise.all(promises),
+        new Promise(resolve => setTimeout(resolve, 1200)) // safety fallback
+    ]);
+}
+
+async function revealChat() {
+
+    await waitForImagesToLoad();
+
+    messagesContainer.style.scrollBehavior = "auto";
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+    messagesContainer.classList.add("ready");
+
+    requestAnimationFrame(() => {
+        messagesContainer.style.scrollBehavior = "smooth";
+    });
+
+}
+
+revealChat();
 
 
 // ===============================
@@ -608,9 +655,7 @@ function addMessage(message, type, pending = false) {
     `;
 
     messagesContainer.appendChild(div);
-    requestAnimationFrame(() => {
-    scrollToBottom();
-});
+
 
 }
 
