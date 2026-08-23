@@ -169,10 +169,9 @@
         <% } else if (msg.mediaType === "image") { %>
 
             <img
-                src="<%= msg.mediaUrl %>"
-                class="chat-image"
-                alt="image message"
-                loading="lazy">
+    src="<%= msg.mediaUrl %>"
+    class="chat-image"
+    alt="image message">
 
         <% } else { %>
 
@@ -550,10 +549,12 @@ scrollToBottom();
 // ADD MESSAGE TO CHAT
 // ===============================
 
-function addMessage(message, type) {
+function addMessage(message, type, pending = false) {
 
     const div = document.createElement("div");
     div.className = `message ${type}`;
+    if (pending) div.classList.add("sending");
+
     div.dataset.messageId = message._id;
     div.dataset.sender = message.sender;
     div.dataset.rawText = message.message || "";
@@ -578,8 +579,13 @@ function addMessage(message, type) {
 
     let bodyHtml = "";
     if (message.mediaType === "image") {
-        bodyHtml = `<img src="${message.mediaUrl}" class="chat-image" alt="image message" loading="lazy">`;
-    } else {
+    bodyHtml = `
+        <div class="image-wrap">
+            <img src="${message.mediaUrl}" class="chat-image" alt="image message">
+            ${pending ? '<div class="sending-overlay"><div class="sending-ring"></div></div>' : ""}
+        </div>
+    `;
+} else {
         bodyHtml = `<span class="message-text">${escapeHtml(message.message)}</span>`;
     }
 
@@ -587,12 +593,12 @@ function addMessage(message, type) {
     if (type === "sent") {
         tickHtml = `
             <span class="message-seen" data-message-id="${message._id}">
-                Sent
+                ${pending ? "" : "Sent"}
             </span>
         `;
     }
 
-    div.innerHTML = `
+      div.innerHTML = `
         ${replyHtml}
         ${bodyHtml}
         <span class="message-time">
@@ -602,8 +608,13 @@ function addMessage(message, type) {
     `;
 
     messagesContainer.appendChild(div);
+    requestAnimationFrame(() => {
     scrollToBottom();
+});
+
 }
+
+
 
 // ===============================
 // SEND MESSAGE
@@ -661,7 +672,39 @@ chatForm.addEventListener("submit", async (e) => {
 
     // ===== NORMAL SEND (text and/or image, with optional reply) =====
 
+    // ===== NORMAL SEND (text and/or image, with optional reply) =====
+
     if (!message && !selectedImageFile) return;
+
+    const tempId = "temp-" + Date.now();
+    let localImageDataUrl = null;
+
+    // Show instantly if it's an image
+    if (selectedImageFile) {
+        localImageDataUrl = imagePreviewThumb.src;
+
+        addMessage({
+            _id: tempId,
+            sender: currentStudentId,
+            message: message,
+            mediaUrl: localImageDataUrl,
+            mediaType: "image",
+            createdAt: new Date(),
+            replyTo: null
+        }, "sent", true); // true = pending/sending state
+    }
+
+    const currentReplyId = activeReplyId;
+
+    // Reset input immediately for snappy feel
+    messageInput.value = "";
+    selectedImageFile = null;
+    const fileToSend = imageInput.files[0];
+    imageInput.value = "";
+    imagePreviewBar.style.display = "none";
+    activeReplyId = null;
+    replyPreview.style.display = "none";
+    messageInput.focus();
 
     try {
 
@@ -669,12 +712,12 @@ chatForm.addEventListener("submit", async (e) => {
         formData.append("receiver", receiverId);
         formData.append("message", message);
 
-        if (activeReplyId) {
-            formData.append("replyTo", activeReplyId);
+        if (currentReplyId) {
+            formData.append("replyTo", currentReplyId);
         }
 
-        if (selectedImageFile) {
-            formData.append("image", selectedImageFile);
+        if (fileToSend) {
+            formData.append("image", fileToSend);
         }
 
         const response = await fetch("/messages", {
@@ -686,24 +729,40 @@ chatForm.addEventListener("submit", async (e) => {
 
         if (!data.success) {
             alert(data.message);
+            const pendingEl = document.querySelector(`.message[data-message-id="${tempId}"]`);
+            if (pendingEl) pendingEl.remove();
             return;
         }
 
-        addMessage(data.message, "sent");
+        if (localImageDataUrl) {
+    // Swap the temp bubble with the real one
+    const pendingEl = document.querySelector(`.message[data-message-id="${tempId}"]`);
+    if (pendingEl) {
+        pendingEl.dataset.messageId = data.message._id;
+        pendingEl.classList.remove("sending");
 
-        messageInput.value = "";
-        messageInput.focus();
+        const img = pendingEl.querySelector(".chat-image");
+        if (img) img.src = data.message.mediaUrl;
 
-        selectedImageFile = null;
-        imageInput.value = "";
-        imagePreviewBar.style.display = "none";
+        // Remove the spinner completely
+        const spinner = pendingEl.querySelector(".sending-overlay");
+if (spinner) spinner.remove();
 
-        activeReplyId = null;
-        replyPreview.style.display = "none";
+        const seenSpan = pendingEl.querySelector(".message-seen");
+        if (seenSpan) {
+            seenSpan.dataset.messageId = data.message._id;
+            seenSpan.textContent = "Sent";
+        }
+    }
+} else {
+    addMessage(data.message, "sent");
+}
 
     } catch (error) {
         console.error("Send message error:", error);
         alert("Unable to send message.");
+        const pendingEl = document.querySelector(`.message[data-message-id="${tempId}"]`);
+        if (pendingEl) pendingEl.remove();
     }
 
 });
@@ -831,9 +890,10 @@ contextMenu.addEventListener("click", (e) => {
     const msgEl = longPressTarget;
     const messageId = msgEl.dataset.messageId;
     const rawText = msgEl.dataset.rawText;
+    const mediaType = msgEl.dataset.mediaType;
 
     if (action === "reply") {
-        startReply(messageId, rawText);
+        startReply(messageId, rawText, mediaType);
     } else if (action === "edit") {
         startEdit(messageId, rawText);
     } else if (action === "delete") {
@@ -845,21 +905,23 @@ contextMenu.addEventListener("click", (e) => {
 
 // --- Reply flow ---
 
-function startReply(messageId, text) {
+function startReply(messageId, text, mediaType) {
 
     activeEditId = null;
     activeReplyId = messageId;
 
-    replyPreviewText.textContent = text;
+    if (mediaType === "image") {
+        replyPreviewText.innerHTML = '<i class="bi bi-image"></i> Photo';
+    } else if (mediaType === "voice") {
+        replyPreviewText.innerHTML = '<i class="bi bi-mic-fill"></i> Voice message';
+    } else {
+        replyPreviewText.textContent = text;
+    }
+
     replyPreview.style.display = "flex";
 
     messageInput.focus();
 }
-
-cancelReplyBtn.addEventListener("click", () => {
-    activeReplyId = null;
-    replyPreview.style.display = "none";
-});
 
 // --- Edit flow ---
 
@@ -1065,25 +1127,25 @@ messagesContainer.addEventListener("touchend", () => {
         // My message → swipe LEFT more than 40px
 
         if (
-            (!isMine && distance > 40) ||
-            (isMine && distance < -40)
-        ) {
+    (!isMine && distance > 40) ||
+    (isMine && distance < -40)
+) {
 
-            const messageId = currentSwipeEl.dataset.messageId;
-            const rawText = currentSwipeEl.dataset.rawText;
+    const messageId = currentSwipeEl.dataset.messageId;
+    const rawText = currentSwipeEl.dataset.rawText;
+    const mediaType = currentSwipeEl.dataset.mediaType;
 
-            if (rawText) {
+    if (rawText || mediaType) {
 
-                startReply(messageId, rawText);
+        startReply(messageId, rawText, mediaType);
 
-                if (navigator.vibrate) {
-                    navigator.vibrate(15);
-                }
-
-            }
-
+        if (navigator.vibrate) {
+            navigator.vibrate(15);
         }
 
+    }
+
+}
     }
 
     currentSwipeEl = null;
