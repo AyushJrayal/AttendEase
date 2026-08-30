@@ -1,14 +1,10 @@
-require("dotenv").config();
+ require("dotenv").config();
 
-console.log("Cloudinary config check:", {
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY ? "present" : "MISSING",
-    api_secret: process.env.CLOUDINARY_API_SECRET ? "present" : "MISSING"
-});
-
-const express = require("express");
+ const express = require("express");
 
 const session = require("express-session");
+
+const { MongoStore } = require("connect-mongo");
 
 const multer = require("multer");
 
@@ -31,6 +27,8 @@ const Teacher = require("./models/Teacher");
 const path = require("path");
 
 const app = express();
+
+app.set("trust proxy", 1);
 
 const http = require("http");
 const { Server } = require("socket.io");
@@ -385,19 +383,29 @@ app.use(express.json());
 
 app.use(session({
 
-    secret: "mysecretkey",
+    secret: process.env.SESSION_SECRET || "mysecretkey",
 
     resave: false,
 
     saveUninitialized: false,
 
+    store: MongoStore.create({
+
+        mongoUrl: process.env.MONGODB_URI,
+
+        collectionName: "sessions"
+
+    }),
+
     cookie: {
 
-        maxAge: 30 * 24 * 60 * 60 * 1000,
+        maxAge: 365 * 24 * 60 * 60 * 1000,
 
         httpOnly: true,
 
-        sameSite: "lax"
+        sameSite: "lax",
+
+        secure: true
 
     }
 
