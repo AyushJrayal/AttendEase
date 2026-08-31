@@ -4,7 +4,7 @@
 
 const session = require("express-session");
 
-const { MongoStore } = require("connect-mongo");
+const MongoStore = require("connect-mongo");
 
 const multer = require("multer");
 
@@ -399,7 +399,7 @@ app.use(express.json());
 
 app.use(session({
 
-    secret: process.env.SESSION_SECRET || "mysecretkey",
+    secret: process.env.SESSION_SECRET,
 
     resave: false,
 
@@ -421,7 +421,7 @@ app.use(session({
 
         sameSite: "lax",
 
-        secure: process.env.NODE_ENV === "production"
+        secure: false
 
     }
 
