@@ -118,19 +118,19 @@ form.addEventListener("submit", async (e) => {
 
             window.location.href = "/student-dashboard";
 
-        } else {
+        }  else {
 
-            loginError.textContent =
-                "⚠ Incorrect password. Please try again.";
+    const message = await response.text();
 
-            loginError.style.display = "block";
+    loginError.textContent = "⚠ " + message;
 
-            passwordInput.classList.add("input-error");
+    loginError.style.display = "block";
 
-            passwordInput.focus();
+    passwordInput.classList.add("input-error");
 
-        }
+    passwordInput.focus();
 
+}
     } catch (error) {
 
         loginError.textContent =

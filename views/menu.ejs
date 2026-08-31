@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canteen Menu</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/menu.css">
+</head>
+<body>
+
+    <div class="menu-header">
+        <h2><i class="bi bi-egg-fried"></i> Canteen Menu</h2>
+        <button class="cart-btn" id="cartBtn">
+            <i class="bi bi-cart3"></i>
+            <span class="cart-count" id="cartCount" style="display:none;">0</span>
+        </button>
+    </div>
+
+    <div class="container py-4">
+
+        <% if (menuItems.length === 0) { %>
+
+            <div class="text-center text-muted py-5">
+                <i class="bi bi-basket" style="font-size: 40px;"></i>
+                <p class="mt-2">Nothing available right now. Check back soon!</p>
+            </div>
+
+        <% } else { %>
+
+            <div class="row g-3" id="menuGrid">
+
+                <% menuItems.forEach(item => { %>
+
+                    <div class="col-6 col-md-4 col-lg-3">
+
+                        <div class="menu-card"
+                            data-id="<%= item._id %>"
+                            data-name="<%= item.name %>"
+                            data-price="<%= item.price %>">
+
+                            <div class="menu-img-wrap">
+                                <% if (item.photoUrl) { %>
+                                    <img src="<%= item.photoUrl %>" alt="<%= item.name %>">
+                                <% } else { %>
+                                    <div class="no-img">
+                                        <i class="bi bi-image"></i>
+                                    </div>
+                                <% } %>
+                            </div>
+
+                            <div class="menu-body">
+                                <h4><%= item.name %></h4>
+                                <p class="category"><%= item.category %></p>
+                                <p class="price">₹<%= item.price %></p>
+
+                                <button class="btn add-cart-btn w-100">
+                                    <i class="bi bi-plus-circle"></i> Add
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                <% }) %>
+
+            </div>
+
+        <% } %>
+
+    </div>
+
+    <!-- CART PANEL -->
+    <div class="cart-overlay" id="cartOverlay"></div>
+
+    <div class="cart-panel" id="cartPanel">
+
+        <div class="cart-header">
+            <h5><i class="bi bi-cart3"></i> Your Order</h5>
+            <button id="closeCart" class="close-cart"><i class="bi bi-x-lg"></i></button>
+        </div>
+
+        <div class="cart-items" id="cartItems">
+            <p class="empty-cart-msg">Your cart is empty.</p>
+        </div>
+
+        <div class="cart-footer">
+            <div class="cart-total-row">
+                <span>Total</span>
+                <span id="cartTotal">₹0</span>
+            </div>
+            <button class="btn checkout-btn w-100" id="checkoutBtn" disabled>
+                Proceed to Checkout
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+
+        // ===============================
+        // CART STATE (persisted in localStorage)
+        // ===============================
+
+        let cart = JSON.parse(localStorage.getItem("canteenCart") || "[]");
+
+        function saveCart() {
+            localStorage.setItem("canteenCart", JSON.stringify(cart));
+        }
+
+        function addToCart(id, name, price) {
+
+            const existing = cart.find(item => item.id === id);
+
+            if (existing) {
+                existing.qty += 1;
+            } else {
+                cart.push({ id, name, price: Number(price), qty: 1 });
+            }
+
+            saveCart();
+            renderCart();
+        }
+
+        function changeQty(id, delta) {
+
+            const item = cart.find(i => i.id === id);
+            if (!item) return;
+
+            item.qty += delta;
+
+            if (item.qty <= 0) {
+                cart = cart.filter(i => i.id !== id);
+            }
+
+            saveCart();
+            renderCart();
+        }
+
+        function renderCart() {
+
+            const cartItemsEl = document.getElementById("cartItems");
+            const cartCountEl = document.getElementById("cartCount");
+            const cartTotalEl = document.getElementById("cartTotal");
+            const checkoutBtn = document.getElementById("checkoutBtn");
+
+            const totalItems = cart.reduce((sum, i) => sum + i.qty, 0);
+            const totalPrice = cart.reduce((sum, i) => sum + (i.qty * i.price), 0);
+
+            if (totalItems > 0) {
+                cartCountEl.style.display = "flex";
+                cartCountEl.textContent = totalItems;
+            } else {
+                cartCountEl.style.display = "none";
+            }
+
+            cartTotalEl.textContent = "₹" + totalPrice;
+            checkoutBtn.disabled = cart.length === 0;
+
+            if (cart.length === 0) {
+                cartItemsEl.innerHTML = `<p class="empty-cart-msg">Your cart is empty.</p>`;
+                return;
+            }
+
+            cartItemsEl.innerHTML = cart.map(item => `
+                <div class="cart-item">
+                    <div class="cart-item-info">
+                        <span class="cart-item-name">${item.name}</span>
+                        <span class="cart-item-price">₹${item.price} x ${item.qty}</span>
+                    </div>
+                    <div class="qty-controls">
+                        <button onclick="changeQty('${item.id}', -1)">−</button>
+                        <span>${item.qty}</span>
+                        <button onclick="changeQty('${item.id}', 1)">+</button>
+                    </div>
+                </div>
+            `).join("");
+
+        }
+
+        // ===============================
+        // ADD BUTTON CLICKS
+        // ===============================
+
+        document.querySelectorAll(".menu-card").forEach(card => {
+
+            const addBtn = card.querySelector(".add-cart-btn");
+
+            addBtn.addEventListener("click", () => {
+
+                const id = card.dataset.id;
+                const name = card.dataset.name;
+                const price = card.dataset.price;
+
+                addToCart(id, name, price);
+
+                // Small feedback animation
+                addBtn.classList.add("added");
+                setTimeout(() => addBtn.classList.remove("added"), 300);
+
+            });
+
+        });
+
+        // ===============================
+        // CART PANEL OPEN/CLOSE
+        // ===============================
+
+        const cartPanel = document.getElementById("cartPanel");
+        const cartOverlay = document.getElementById("cartOverlay");
+
+        document.getElementById("cartBtn").addEventListener("click", () => {
+            cartPanel.classList.add("open");
+            cartOverlay.classList.add("show");
+        });
+
+        document.getElementById("closeCart").addEventListener("click", closeCartPanel);
+        cartOverlay.addEventListener("click", closeCartPanel);
+
+        function closeCartPanel() {
+            cartPanel.classList.remove("open");
+            cartOverlay.classList.remove("show");
+        }
+
+        // ===============================
+        // CHECKOUT (Step 3 will wire this up)
+        // ===============================
+
+        document.getElementById("checkoutBtn").addEventListener("click", () => {
+            window.location.href = "/checkout";
+        });
+
+        renderCart();
+
+    </script>
+
+</body>
+</html>

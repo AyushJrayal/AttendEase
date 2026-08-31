@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/menu.css">
+</head>
+<body>
+
+    <div class="menu-header">
+        <a href="/menu" class="back-link"><i class="bi bi-arrow-left"></i></a>
+        <h2><i class="bi bi-receipt"></i> Checkout</h2>
+        <span style="width:24px;"></span>
+    </div>
+
+    <div class="container py-4" style="max-width: 480px;">
+
+        <!-- ORDER SUMMARY -->
+        <div class="checkout-card">
+            <h5>Order Summary</h5>
+            <div id="summaryItems"></div>
+            <div class="summary-row">
+                <span>Items Total</span>
+                <span id="summaryItemsTotal">₹0</span>
+            </div>
+            <div class="summary-row" id="deliveryFeeRow" style="display:none;">
+                <span>Delivery Fee</span>
+                <span>₹15</span>
+            </div>
+            <div class="summary-row total-row">
+                <span>Total</span>
+                <span id="summaryGrandTotal">₹0</span>
+            </div>
+        </div>
+
+        <!-- ORDER TYPE -->
+        <div class="checkout-card">
+            <h5>Order Type</h5>
+
+            <div class="order-type-options">
+
+                <label class="order-type-option">
+                    <input type="radio" name="orderType" value="pickup" checked>
+                    <div class="option-box">
+                        <i class="bi bi-shop"></i>
+                        <span>Pickup</span>
+                        <small>Ready when you arrive</small>
+                    </div>
+                </label>
+
+                <label class="order-type-option">
+                    <input type="radio" name="orderType" value="delivery">
+                    <div class="option-box">
+                        <i class="bi bi-bicycle"></i>
+                        <span>Deliver to Class</span>
+                        <small>+₹15 fee</small>
+                    </div>
+                </label>
+
+            </div>
+
+            <div id="deliveryFields" style="display:none;">
+
+                <div class="mb-2 mt-3">
+                    <label class="form-label">Department</label>
+                    <input type="text" id="department" class="form-control" placeholder="e.g. BCA">
+                </div>
+
+                <div class="row">
+                    <div class="col-6">
+                        <label class="form-label">Semester</label>
+                        <input type="text" id="semester" class="form-control" placeholder="e.g. 3">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Section</label>
+                        <input type="text" id="section" class="form-control" placeholder="e.g. A">
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <button class="btn place-order-btn w-100" id="placeOrderBtn">
+            Place Order (Payment Coming Next)
+        </button>
+
+    </div>
+
+    <script>
+
+        let cart = JSON.parse(localStorage.getItem("canteenCart") || "[]");
+
+        if (cart.length === 0) {
+            window.location.href = "/menu";
+        }
+
+        function renderSummary() {
+
+            const itemsTotal = cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+            const orderType = document.querySelector('input[name="orderType"]:checked').value;
+            const deliveryFee = orderType === "delivery" ? 15 : 0;
+            const grandTotal = itemsTotal + deliveryFee;
+
+            document.getElementById("summaryItems").innerHTML = cart.map(item => `
+                <div class="summary-item">
+                    <span>${item.name} x ${item.qty}</span>
+                    <span>₹${item.price * item.qty}</span>
+                </div>
+            `).join("");
+
+            document.getElementById("summaryItemsTotal").textContent = "₹" + itemsTotal;
+            document.getElementById("summaryGrandTotal").textContent = "₹" + grandTotal;
+            document.getElementById("deliveryFeeRow").style.display = orderType === "delivery" ? "flex" : "none";
+            document.getElementById("deliveryFields").style.display = orderType === "delivery" ? "block" : "none";
+        }
+
+        document.querySelectorAll('input[name="orderType"]').forEach(radio => {
+            radio.addEventListener("change", renderSummary);
+        });
+
+        renderSummary();
+
+        document.getElementById("placeOrderBtn").addEventListener("click", async () => {
+
+            const orderType = document.querySelector('input[name="orderType"]:checked').value;
+
+            const payload = {
+                items: cart,
+                orderType
+            };
+
+            if (orderType === "delivery") {
+
+                const department = document.getElementById("department").value.trim();
+                const semester = document.getElementById("semester").value.trim();
+                const section = document.getElementById("section").value.trim();
+
+                if (!department || !semester || !section) {
+                    alert("Please fill in your class details for delivery.");
+                    return;
+                }
+
+                payload.department = department;
+                payload.semester = semester;
+                payload.section = section;
+            }
+
+            try {
+
+                const res = await fetch("/place-order", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await res.json();
+
+                if (!data.success) {
+                    alert(data.message || "Unable to place order.");
+                    return;
+                }
+
+                localStorage.removeItem("canteenCart");
+
+                window.location.href = "/order-confirmation/" + data.orderId;
+
+            } catch (error) {
+                console.error("Place order error:", error);
+                alert("Unable to place order.");
+            }
+
+        });
+
+    </script>
+
+</body>
+</html>

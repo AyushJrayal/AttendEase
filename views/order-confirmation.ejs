@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmed</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/menu.css">
+</head>
+<body>
+
+    <div class="container py-5 text-center" style="max-width: 420px;">
+
+        <i class="bi bi-check-circle-fill" style="font-size: 60px; color: #0E6B3F;"></i>
+
+        <h3 class="mt-3">Order Placed!</h3>
+        <p class="text-muted">Order #<%= order._id.toString().slice(-6).toUpperCase() %></p>
+
+        <div class="checkout-card text-start mt-4">
+
+            <h5>Items</h5>
+
+            <% order.items.forEach(item => { %>
+                <div class="summary-item">
+                    <span><%= item.name %> x <%= item.qty %></span>
+                    <span>₹<%= item.price * item.qty %></span>
+                </div>
+            <% }) %>
+
+            <div class="summary-row">
+                <span>Items Total</span>
+                <span>₹<%= order.itemsTotal %></span>
+            </div>
+
+            <% if (order.orderType === "delivery") { %>
+                <div class="summary-row">
+                    <span>Delivery Fee</span>
+                    <span>₹<%= order.deliveryFee %></span>
+                </div>
+            <% } %>
+
+            <div class="summary-row total-row">
+                <span>Total</span>
+                <span>₹<%= order.totalAmount %></span>
+            </div>
+
+        </div>
+
+        <div class="checkout-card text-start">
+            <h5>Order Type</h5>
+            <p class="mb-0">
+                <% if (order.orderType === "pickup") { %>
+                    <i class="bi bi-shop"></i> Pickup from canteen
+                <% } else { %>
+                    <i class="bi bi-bicycle"></i> Delivery to
+                    <%= order.deliveryDetails.department %>,
+                    Sem <%= order.deliveryDetails.semester %>,
+                    Sec <%= order.deliveryDetails.section %>
+                <% } %>
+            </p>
+        </div>
+
+        <div class="checkout-card text-start">
+            <h5>Status</h5>
+            <p class="mb-0 status-tag status-<%= order.status %>"><%= order.status %></p>
+        </div>
+
+        <a href="/menu" class="btn place-order-btn w-100 mt-3">Back to Menu</a>
+
+    </div>
+
+</body>
+</html>

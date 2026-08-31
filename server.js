@@ -24,6 +24,8 @@ const Timetable = require("./models/Timetable");
 
 const Teacher = require("./models/Teacher");
 
+const MenuItem = require("./models/MenuItem");
+
 const path = require("path");
 
 const app = express();
@@ -58,6 +60,20 @@ const upload = multer({
     limits: {
         fileSize: 15 * 1024 * 1024 // 15MB max
     }
+});
+
+const menuStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: "attendease-canteen",
+        resource_type: "image",
+        allowed_formats: ["jpg", "jpeg", "png", "webp"]
+    }
+});
+
+const uploadMenuPhoto = multer({
+    storage: menuStorage,
+    limits: { fileSize: 5 * 1024 * 1024 }
 });
 
 
@@ -405,7 +421,7 @@ app.use(session({
 
         sameSite: "lax",
 
-        secure: true
+        secure: process.env.NODE_ENV === "production"
 
     }
 
@@ -681,7 +697,7 @@ app.get("/student-dashboard", async (req, res) => {
 
     if (!req.session.student) {
 
-        return res.redirect("/student-login");
+        return res.redirect("/login");
 
     }
 
@@ -730,8 +746,7 @@ app.get("/student-profile", (req, res) => {
 
     if (!req.session.student) {
 
-        return res.redirect("/student-login");
-
+        return res.redirect("/login");
     }
 
     res.render("student-profile", {
@@ -882,7 +897,7 @@ app.get("/student-attendance", async (req, res) => {
 
     if (!req.session.student) {
 
-        return res.redirect("/student-login");
+        return res.redirect("/login");
 
     }
 
@@ -1771,6 +1786,212 @@ app.get("/chat/:studentId", async (req, res) => {
     }
 
 });
+
+// Teacher: show add menu item form
+app.get("/add-menu-item", (req, res) => {
+    if (!req.session.teacher) {
+        return res.redirect("/admin-login");
+    }
+    res.render("add-menu-item");
+});
+
+// Teacher: create menu item
+app.post("/add-menu-item", uploadMenuPhoto.single("photo"), async (req, res) => {
+    try {
+        if (!req.session.teacher) {
+            return res.redirect("/admin-login");
+        }
+
+        const menuItem = new MenuItem({
+            name: req.body.name,
+            price: req.body.price,
+            category: req.body.category,
+            photoUrl: req.file ? req.file.path : "",
+            available: true,
+            addedBy: req.session.teacher._id
+        });
+
+        await menuItem.save();
+        res.redirect("/add-menu-item");
+
+    } catch (error) {
+        console.error("Add menu item error:", error);
+        res.send("Unable to add menu item.");
+    }
+});
+
+// Student & Teacher: browse the menu
+// Student & Teacher: browse the menu (ORDERING PAGE)
+app.get("/menu", async (req, res) => {
+
+    if (!req.session.student && !req.session.teacher) {
+        return res.redirect("/login");
+    }
+
+    const menuItems = await MenuItem.find({ available: true }).sort({ category: 1, name: 1 });
+
+    res.render("menu", {
+        menuItems
+    });
+
+});
+
+// Teacher: manage menu (ADMIN PAGE)
+app.get("/manage-menu", async (req, res) => {
+
+    if (!req.session.teacher) {
+        return res.redirect("/admin-login");
+    }
+
+    const menuItems = await MenuItem.find().sort({ category: 1, name: 1 });
+
+    res.render("manage-menu", {
+        menuItems
+    });
+
+});
+
+// Teacher: delete a menu item
+app.delete("/menu-item/:id", async (req, res) => {
+
+    try {
+
+        if (!req.session.teacher) {
+            return res.status(401).json({ success: false });
+        }
+
+        await MenuItem.findByIdAndDelete(req.params.id);
+
+        res.json({ success: true });
+
+    } catch (error) {
+        console.error("Delete menu item error:", error);
+        res.status(500).json({ success: false });
+    }
+
+});
+
+const Order = require("./models/Order");
+
+// ================= CHECKOUT PAGE =================
+
+app.get("/checkout", (req, res) => {
+
+    if (!req.session.student && !req.session.teacher) {
+        return res.redirect("/login");
+    }
+
+    const currentUser = req.session.student || req.session.teacher;
+
+    res.render("checkout", {
+        currentUser,
+        isStudent: !!req.session.student
+    });
+
+});
+
+// ================= PLACE ORDER (stub — no real payment yet) =================
+
+app.post("/place-order", async (req, res) => {
+
+    try {
+
+        if (!req.session.student && !req.session.teacher) {
+            return res.status(401).json({ success: false, message: "Please login first." });
+        }
+
+        const { items, orderType, department, semester, section } = req.body;
+
+        if (!items || !Array.isArray(items) || items.length === 0) {
+            return res.status(400).json({ success: false, message: "Cart is empty." });
+        }
+
+        if (!["delivery", "pickup"].includes(orderType)) {
+            return res.status(400).json({ success: false, message: "Invalid order type." });
+        }
+
+        const itemsTotal = items.reduce((sum, item) => sum + (item.price * item.qty), 0);
+        const deliveryFee = orderType === "delivery" ? 15 : 0;
+        const totalAmount = itemsTotal + deliveryFee;
+
+        let orderedBy, orderedByModel, orderedByName;
+
+        if (req.session.student) {
+            orderedBy = req.session.student._id;
+            orderedByModel = "Student";
+            orderedByName = req.session.student.name;
+        } else {
+            orderedBy = req.session.teacher._id;
+            orderedByModel = "Teacher";
+            orderedByName = req.session.teacher.name;
+        }
+
+        const orderData = {
+            orderedBy,
+            orderedByModel,
+            orderedByName,
+            items: items.map(item => ({
+                menuItemId: item.id,
+                name: item.name,
+                price: item.price,
+                qty: item.qty
+            })),
+            itemsTotal,
+            deliveryFee,
+            totalAmount,
+            orderType,
+            paymentStatus: "pending" // Step 4 will flip this to "paid" after real payment
+        };
+
+        if (orderType === "delivery") {
+
+            if (!department || !semester || !section) {
+                return res.status(400).json({ success: false, message: "Delivery details are required." });
+            }
+
+            orderData.deliveryDetails = { department, semester, section };
+        }
+
+        const newOrder = await Order.create(orderData);
+
+        res.json({
+            success: true,
+            orderId: newOrder._id
+        });
+
+    } catch (error) {
+        console.error("Place order error:", error);
+        res.status(500).json({ success: false, message: "Unable to place order." });
+    }
+
+});
+
+// ================= ORDER CONFIRMATION PAGE =================
+
+app.get("/order-confirmation/:id", async (req, res) => {
+
+    try {
+
+        if (!req.session.student && !req.session.teacher) {
+            return res.redirect("/login");
+        }
+
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            return res.status(404).send("Order not found.");
+        }
+
+        res.render("order-confirmation", { order });
+
+    } catch (error) {
+        console.error("Order confirmation error:", error);
+        res.status(500).send("Unable to load order.");
+    }
+
+});
+
+
 
 connectDB();
 
