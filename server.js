@@ -26,6 +26,8 @@ const Teacher = require("./models/Teacher");
 
 const MenuItem = require("./models/MenuItem");
 
+const CanteenOwner = require("./models/CanteenOwner");
+
 const path = require("path");
 
 const app = express();
@@ -80,6 +82,22 @@ const uploadMenuPhoto = multer({
 io.on("connection", (socket) => {
 
     console.log("A user connected:", socket.id);
+
+    // ===============================
+    // CANTEEN OWNER JOIN
+    // ===============================
+
+    socket.on("canteenOwnerJoin", () => {
+
+        socket.join("canteen-owner");
+
+        console.log(
+            "Canteen Owner joined live order room:",
+            socket.id
+        );
+
+    });
+
     
 
     // ===============================
@@ -638,6 +656,194 @@ if (teacher.password !== password) {
 
     }
 
+});
+
+// ===============================
+// CANTEEN OWNER LOGIN
+// ===============================
+
+// Show canteen owner login page
+app.get("/canteen-login", (req, res) => {
+    res.render("canteen-login");
+});
+
+// Handle canteen owner login
+app.post("/canteen-login", async (req, res) => {
+    try {
+        const { username, password } = req.body;
+
+        const canteenOwner = await CanteenOwner.findOne({ username });
+
+        if (!canteenOwner) {
+            return res.status(401).send("Incorrect username or password.");
+        }
+
+        if (canteenOwner.password !== password) {
+            return res.status(401).send("Incorrect username or password.");
+        }
+
+        // Create separate canteen owner session
+        req.session.canteenOwner = canteenOwner;
+
+        res.redirect("/canteen-dashboard");
+
+    } catch (error) {
+        console.error("Canteen owner login error:", error);
+        res.status(500).send("Canteen login failed.");
+    }
+});
+
+// TEMPORARY: Create Canteen Owner
+app.get("/create-canteen-owner", async (req, res) => {
+    try {
+        const existingOwner = await CanteenOwner.findOne({
+            username: "canteen"
+        });
+
+        if (existingOwner) {
+            return res.send("Canteen owner already exists.");
+        }
+
+        await CanteenOwner.create({
+            name: "Canteen Owner",
+            username: "canteen",
+            password: "123456"
+        });
+
+        res.send("Canteen owner created successfully.");
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("Failed to create canteen owner.");
+    }
+});
+
+// ===============================
+// CANTEEN OWNER DASHBOARD
+// ===============================
+
+app.get("/canteen-dashboard", (req, res) => {
+
+    // Only Canteen Owner can access
+    if (!req.session.canteenOwner) {
+        return res.redirect("/canteen-login");
+    }
+
+    res.render("canteen-dashboard", {
+        canteenOwner: req.session.canteenOwner
+    });
+});
+
+// Canteen Owner Logout
+app.get("/canteen-logout", (req, res) => {
+
+    req.session.canteenOwner = null;
+
+    res.redirect("/canteen-login");
+});
+
+app.patch("/order/:id/status", async (req, res) => {
+    try {
+
+        if (!req.session.canteenOwner) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized"
+            });
+        }
+
+        const { status } = req.body;
+
+        const allowedStatuses = [
+            "placed",
+            "accepted",
+            "preparing",
+            "ready",
+            "completed",
+            "cancelled"
+        ];
+
+        if (!allowedStatuses.includes(status)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid order status."
+            });
+        }
+
+        const order = await Order.findById(req.params.id);
+
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: "Order not found."
+            });
+        }
+
+        order.status = status;
+
+        await order.save();
+
+        io.to(`student:${order.orderedBy.toString()}`).emit("orderStatusUpdated", {
+    orderId: order._id.toString(),
+    status: order.status
+});
+
+        res.json({
+            success: true,
+            status: order.status
+        });
+
+    } catch (error) {
+
+        console.error("Update order status error:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Unable to update order status."
+        });
+    }
+});
+
+// ===============================
+// TOGGLE MENU ITEM STOCK
+// ===============================
+
+
+app.patch("/menu-item/:id/toggle-stock", async (req, res) => {
+    try {
+
+        if (!req.session.canteenOwner) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized"
+            });
+        }
+
+        const menuItem = await MenuItem.findById(req.params.id);
+
+        if (!menuItem) {
+            return res.status(404).json({
+                success: false,
+                message: "Menu item not found"
+            });
+        }
+
+        menuItem.available = !menuItem.available;
+
+        await menuItem.save();
+
+        res.json({
+            success: true,
+            available: menuItem.available
+        });
+
+    } catch (error) {
+        console.error("Toggle stock error:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Unable to update stock."
+        });
+    }
 });
 
 app.post("/start-attendance", async (req, res) => {
@@ -1288,10 +1494,11 @@ app.get("/studentss", async (req, res) => {
         console.log("Unread map:", unreadMap);
 
         res.render("studentss", {
-            students,
-            currentStudentId: currentStudentId.toString(),
-            unreadMap
-        });
+    students,
+    currentStudentId: currentStudentId.toString(),
+    unreadMap,
+    student: req.session.student
+});
 
     } catch (error) {
         console.error("Student list error:", error);
@@ -1787,20 +1994,21 @@ app.get("/chat/:studentId", async (req, res) => {
 
 });
 
-// Teacher: show add menu item form
+// Canteen: show add menu item form
 app.get("/add-menu-item", (req, res) => {
-    if (!req.session.teacher) {
-        return res.redirect("/admin-login");
+    if (!req.session.canteenOwner) {
+        return res.redirect("/canteen-login");
     }
+
     res.render("add-menu-item");
 });
 
 // Teacher: create menu item
 app.post("/add-menu-item", uploadMenuPhoto.single("photo"), async (req, res) => {
     try {
-        if (!req.session.teacher) {
-            return res.redirect("/admin-login");
-        }
+        if (!req.session.canteenOwner) {
+    return res.redirect("/canteen-login");
+}
 
         const menuItem = new MenuItem({
             name: req.body.name,
@@ -1808,7 +2016,6 @@ app.post("/add-menu-item", uploadMenuPhoto.single("photo"), async (req, res) => 
             category: req.body.category,
             photoUrl: req.file ? req.file.path : "",
             available: true,
-            addedBy: req.session.teacher._id
         });
 
         await menuItem.save();
@@ -1839,16 +2046,16 @@ app.get("/menu", async (req, res) => {
 // Teacher: manage menu (ADMIN PAGE)
 app.get("/manage-menu", async (req, res) => {
 
-    if (!req.session.teacher) {
-        return res.redirect("/admin-login");
+    if (!req.session.canteenOwner) {
+        return res.redirect("/canteen-login");
     }
 
-    const menuItems = await MenuItem.find().sort({ category: 1, name: 1 });
+    const menuItems = await MenuItem.find()
+        .sort({ category: 1, name: 1 });
 
     res.render("manage-menu", {
         menuItems
     });
-
 });
 
 // Teacher: delete a menu item
@@ -1856,7 +2063,7 @@ app.delete("/menu-item/:id", async (req, res) => {
 
     try {
 
-        if (!req.session.teacher) {
+        if (!req.session.canteenOwner) {
             return res.status(401).json({ success: false });
         }
 
@@ -1906,6 +2113,26 @@ app.post("/place-order", async (req, res) => {
             return res.status(400).json({ success: false, message: "Cart is empty." });
         }
 
+        // Check that every ordered item is currently available
+for (const item of items) {
+
+    const menuItem = await MenuItem.findById(item.id);
+
+    if (!menuItem) {
+        return res.status(400).json({
+            success: false,
+            message: `${item.name} is no longer available.`
+        });
+    }
+
+    if (!menuItem.available) {
+        return res.status(400).json({
+            success: false,
+            message: `${menuItem.name} is currently out of stock.`
+        });
+    }
+}
+
         if (!["delivery", "pickup"].includes(orderType)) {
             return res.status(400).json({ success: false, message: "Invalid order type." });
         }
@@ -1954,6 +2181,20 @@ app.post("/place-order", async (req, res) => {
 
         const newOrder = await Order.create(orderData);
 
+        io.to("canteen-owner").emit("newOrder", {
+    orderId: newOrder._id.toString(),
+    orderedByName: newOrder.orderedByName,
+    items: newOrder.items,
+    itemsTotal: newOrder.itemsTotal,
+    deliveryFee: newOrder.deliveryFee,
+    totalAmount: newOrder.totalAmount,
+    orderType: newOrder.orderType,
+    deliveryDetails: newOrder.deliveryDetails || null,
+    status: newOrder.status,
+    paymentStatus: newOrder.paymentStatus,
+    createdAt: newOrder.createdAt
+});
+
         res.json({
             success: true,
             orderId: newOrder._id
@@ -1964,6 +2205,40 @@ app.post("/place-order", async (req, res) => {
         res.status(500).json({ success: false, message: "Unable to place order." });
     }
 
+});
+
+app.get("/canteen-orders", async (req, res) => {
+    try {
+
+        if (!req.session.canteenOwner) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized"
+            });
+        }
+
+        const orders = await Order.find({
+            status: {
+                $in: ["placed", "accepted", "preparing", "ready"]
+            }
+        })
+        .sort({ createdAt: -1 })
+        .lean();
+
+        res.json({
+            success: true,
+            orders
+        });
+
+    } catch (error) {
+
+        console.error("Canteen orders error:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Unable to load orders."
+        });
+    }
 });
 
 // ================= ORDER CONFIRMATION PAGE =================
@@ -1990,6 +2265,8 @@ app.get("/order-confirmation/:id", async (req, res) => {
     }
 
 });
+
+
 
 
 

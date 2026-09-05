@@ -124,6 +124,13 @@ background:#1f2937;
 color:white;
 
 }
+.admin1{
+
+background:#0E6B3F;
+
+color:white;
+
+}
 
 .or{
 
@@ -176,4 +183,43 @@ line-height:22px;
 .input-error {
     border: 1.5px solid #d92d20 !important;
     background: #fffafa !important;
+}.phone {
+    position: relative;
+    overflow: hidden;
+}
+
+.phone::before,
+.phone::after {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    border-radius: 50%;
+}
+
+/* Top-left teal/green blob — tied to the card, not the page */
+.phone::before {
+    top: -60px;
+    left: -80px;
+    width: 200px;
+    height: 200px;
+    background: linear-gradient(135deg, #0E6B3F, #14532d);
+    border-radius: 40% 60% 60% 40% / 50% 40% 60% 50%;
+    opacity: 0.15;
+}
+
+/* Bottom-right gold blob — tied to the card, not the page */
+.phone::after {
+    bottom: -70px;
+    right: -90px;
+    width: 220px;
+    height: 220px;
+    background: linear-gradient(135deg, #D4A017, #f5c451);
+    border-radius: 60% 40% 40% 60% / 40% 60% 40% 60%;
+    opacity: 0.15;
+}
+
+/* Everything inside the card sits above the blobs */
+.phone > * {
+    position: relative;
+    z-index: 1;
 }

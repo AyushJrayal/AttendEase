@@ -68,6 +68,39 @@
         </div>
 
         <a href="/menu" class="btn place-order-btn w-100 mt-3">Back to Menu</a>
+        <script src="/socket.io/socket.io.js"></script>
+
+<script>
+    const socket = io();
+
+    socket.on("connect", () => {
+
+        // Tell server which student is connected
+        socket.emit("studentJoin", {
+            _id: "<%= order.orderedBy.toString() %>"
+        });
+
+        console.log("Connected for live order updates");
+    });
+
+    socket.on("orderStatusUpdated", (data) => {
+
+        if (data.orderId !== "<%= order._id.toString() %>") {
+            return;
+        }
+
+        const statusElement = document.querySelector(".status-tag");
+
+        if (statusElement) {
+            statusElement.textContent = data.status;
+
+            statusElement.className =
+                "mb-0 status-tag status-" + data.status;
+        }
+
+        console.log("Order status updated:", data.status);
+    });
+</script>
 
     </div>
 

@@ -85,10 +85,24 @@
     <script>
 
         async function toggleItem(id) {
-            const res = await fetch('/menu-item/' + id + '/toggle', { method: 'POST' });
-            const data = await res.json();
-            if (data.success) location.reload();
+    try {
+        const res = await fetch('/menu-item/' + id + '/toggle-stock', {
+            method: 'PATCH'
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+            location.reload();
+        } else {
+            alert(data.message || "Unable to update stock.");
         }
+
+    } catch (error) {
+        console.error("Toggle stock error:", error);
+        alert("Something went wrong.");
+    }
+}
 
         async function deleteItem(id) {
 

@@ -15,35 +15,18 @@
 
 </head>
 
+
 <body
     data-department="<%= student.department %>"
     data-semester="<%= student.semester %>"
     data-section="<%= student.section %>"
 >
 
+
 <div class="phone">
-
-<%- include("partials/header") %>
-
-<div class="card-ui">
-
-<h3 style="text-align:center;">Welcome</h3>
-
-<h2 style="text-align:center;margin-bottom:10px;">
-
-<%= student.name %>
-
-</h2>
-
-<p style="text-align:center;color:#777;">
-
-<%= student.department %> • Semester <%= student.semester %>
-
-</p>
+    <%- include("partials/header") %>
 
 
-
-</div>
 
 <div id="attendancePopup" class="attendance-popup">
 
@@ -63,59 +46,82 @@
 
 </div>
 
-<div class="card-ui">
+<div class="attendance-card">
 
-<h4 style="margin-bottom:15px;">
+    <div class="attendance-top">
 
-Attendance Percentage
+        <div>
+            <span class="section-label">
+                ATTENDANCE
+            </span>
 
-</h4>
+            <h3>
+                Overall Attendance
+            </h3>
+        </div>
 
-<h1 style="text-align:center;font-size:55px;color:#0B5D3B;">
+        <div class="attendance-percentage">
+            <%= percentage %>%
+        </div>
 
-<%= percentage %>%
+    </div>
 
-</h1>
 
-<div class="progress">
+    <div class="attendance-progress">
 
-<div class="progress-fill"
-     data-width="<%= percentage %>">
-</div>
+        <div
+            class="attendance-progress-fill"
+            data-width="<%= percentage %>"
+        ></div>
+
+    </div>
+
+
+    <div class="attendance-stats">
+
+        <div class="attendance-stat">
+            <span class="stat-number">
+                <%= presentAttendance %>
+            </span>
+
+            <span class="stat-label">
+                Present
+            </span>
+        </div>
+
+
+        <div class="attendance-divider"></div>
+
+
+        <div class="attendance-stat">
+            <span class="stat-number">
+                <%= absentAttendance %>
+            </span>
+
+            <span class="stat-label">
+                Absent
+            </span>
+        </div>
+
+
+        <div class="attendance-divider"></div>
+
+
+        <div class="attendance-stat">
+            <span class="stat-number">
+                <%= totalAttendance %>
+            </span>
+
+            <span class="stat-label">
+                Total
+            </span>
+        </div>
+
+    </div>
 
 </div>
 
 <br>
-
-<div style="display:flex;justify-content:space-between;text-align:center;">
-
-<div>
-
-<h3><%= presentAttendance %></h3>
-
-<p>Present</p>
-
-</div>
-
-<div>
-
-<h3><%= absentAttendance %></h3>
-
-<p>Absent</p>
-
-</div>
-
-<div>
-
-<h3><%= totalAttendance %></h3>
-
-<p>Total</p>
-
-</div>
-
-</div>
-
-</div>
 
 <div class="menu">
 
@@ -131,7 +137,7 @@ Attendance Percentage
 
 <i class="bi bi-calendar3"></i>
 
-<span>Time Table</span>
+<span>T.T</span>
 
 </a>
 
