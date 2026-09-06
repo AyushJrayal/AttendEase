@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Inbox | AttendEase</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="/css/style.css">
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #fafafa;
+            font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+        }
+
+        .inbox-page {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px 0 40px;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 16px;
+            margin-bottom: 18px;
+        }
+
+        .page-header h2 {
+            margin: 0;
+            font-size: 20px;
+            font-weight: 700;
+            color: #262626;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .new-chat-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 14px;
+            background: #0E6B3F;
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        
+
+        .inbox-tabs {
+            display: flex;
+            border-bottom: 1px solid #efefef;
+            padding: 0 16px;
+            margin-bottom: 12px;
+        }
+
+        .inbox-tab {
+            flex: 1;
+            text-align: center;
+            padding: 12px 0;
+            font-size: 15px;
+            font-weight: 600;
+            color: #8e8e8e;
+            cursor: pointer;
+            border: none;
+            background: transparent;
+            border-bottom: 2px solid transparent;
+        }
+
+        .inbox-tab.active {
+            color: #262626;
+            border-bottom: 2px solid #262626;
+        }
+
+        .search-box {
+            position: relative;
+            margin: 0 16px 14px;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #8e8e8e;
+            font-size: 14px;
+        }
+
+        .search-box input {
+            width: 100%;
+            height: 40px;
+            padding-left: 38px;
+            padding-right: 14px;
+            border: none;
+            border-radius: 20px;
+            background: #efefef;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .search-box input::placeholder {
+            color: #8e8e8e;
+        }
+
+        .chat-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 16px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .chat-row:hover {
+            background: #fafafa;
+        }
+
+        .chat-avatar {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #0E6B3F;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .group-avatar {
+            background: #262626;
+            font-size: 22px;
+        }
+
+        .chat-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .chat-name {
+            font-size: 14px;
+            margin: 0;
+            color: #262626;
+            font-weight: 400;
+        }
+
+        .chat-row.unread .chat-name,
+        .chat-row.unread .chat-preview {
+            font-weight: 700;
+            color: #262626;
+        }
+
+        .chat-preview {
+            font-size: 14px;
+            color: #8e8e8e;
+            margin: 2px 0 0;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+
+        .chat-time {
+            font-size: 13px;
+            color: #8e8e8e;
+        }
+
+        .unread-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #0095F6;
+            flex-shrink: 0;
+        }
+
+        .empty-message {
+            text-align: center;
+            padding: 60px 20px;
+            color: #8e8e8e;
+        }
+
+        .empty-message i {
+            font-size: 36px;
+            display: block;
+            margin-bottom: 10px;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 30px 20px;
+            color: #8e8e8e;
+            font-size: 14px;
+            display: none;
+        }
+
+        .bottom-actions {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .create-group-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px;
+            background: #0E6B3F;
+            color: white;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px;
+            background: #262626;
+            color: white;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="inbox-page">
+
+    <div class="page-header">
+
+        <h2>
+            <i class="bi bi-chat-square-dots"></i>
+            Messages
+        </h2>
+
+        <a href="/studentss" class="new-chat-btn">
+            <i class="bi bi-plus-lg"></i>
+            New chat
+        </a>
+
+    </div>
+
+    <div class="inbox-tabs">
+
+        <button class="inbox-tab active" id="tab-primary" onclick="showTab('primary')">
+            Primary
+        </button>
+
+        <button class="inbox-tab" id="tab-general" onclick="showTab('general')">
+            General
+        </button>
+
+    </div>
+
+    <div class="search-box">
+
+        <i class="bi bi-search"></i>
+
+        <input
+            type="text"
+            id="chatSearch"
+            placeholder="Search"
+            autocomplete="off">
+
+    </div>
+
+    <!-- PRIMARY -->
+
+    <div id="panel-primary" class="chat-list">
+
+        <% if (primaryChats && primaryChats.length > 0) { %>
+
+            <% primaryChats.forEach(chat => { %>
+
+                <a href="/chat/<%= chat.student._id %>" class="chat-row <%= chat.unreadCount > 0 ? 'unread' : '' %>" data-name="<%= chat.student.name.toLowerCase() %>">
+
+                    <div class="chat-avatar">
+    <img
+        src="<%= chat.student.photo %>"
+        alt="<%= chat.student.name %>"
+        style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
+</div>
+
+                    <div class="chat-info">
+
+                        <p class="chat-name">
+                            <%= chat.student.name %>
+                        </p>
+
+                        <p class="chat-preview">
+
+                            <% if (chat.lastMessage) { %>
+                                <%= chat.lastMessage %>
+                            <% } else { %>
+                                Start a conversation
+                            <% } %>
+
+                        </p>
+
+                    </div>
+
+                    <div class="chat-meta">
+
+                        <% if (chat.lastCreatedAt) { %>
+                            <span class="chat-time" data-timestamp="<%= chat.lastCreatedAt.toISOString() %>">
+                            </span>
+                        <% } %>
+
+                        <% if (chat.unreadCount > 0) { %>
+                            <span class="unread-dot"></span>
+                        <% } %>
+
+                    </div>
+
+                </a>
+
+            <% }) %>
+
+        <% } else { %>
+
+            <div class="empty-message">
+                <i class="bi bi-chat-square-text"></i>
+                No conversations yet. Start one from the student list.
+            </div>
+
+        <% } %>
+
+        <div class="no-results" id="noResultsPrimary">
+            No results found.
+        </div>
+
+    </div>
+
+    <!-- GENERAL -->
+
+    <div id="panel-general" class="chat-list" style="display: none;">
+
+        <% if (generalChats && generalChats.length > 0) { %>
+
+            <% generalChats.forEach(group => { %>
+
+                <a href="/group-chat/<%= group._id %>" class="chat-row" data-name="<%= group.name.toLowerCase() %>">
+
+                    <div class="chat-avatar group-avatar">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+
+                    <div class="chat-info">
+
+                        <p class="chat-name">
+                            <%= group.name %>
+                        </p>
+
+                        <p class="chat-preview">
+                            <%= group.memberCount %> members
+                        </p>
+
+                    </div>
+
+                </a>
+
+            <% }) %>
+
+        <% } else { %>
+
+            <div class="empty-message">
+                <i class="bi bi-people"></i>
+                You're not in any groups yet.
+            </div>
+
+        <% } %>
+
+        <div class="no-results" id="noResultsGeneral">
+            No results found.
+        </div>
+
+    </div>
+
+    <div class="bottom-actions">
+
+        <a href="/create-group" class="create-group-btn">
+            <i class="bi bi-people-fill"></i>
+            Create group
+        </a>
+
+        <a href="/student-dashboard" class="back-btn">
+            <i class="bi bi-arrow-left"></i>
+            Back to dashboard
+        </a>
+
+    </div>
+
+    <%- include("partials/footer") %>
+
+</div>
+
+<script>
+
+function showTab(tab) {
+
+    document.getElementById("panel-primary").style.display =
+        tab === "primary" ? "flex" : "none";
+
+    document.getElementById("panel-general").style.display =
+        tab === "general" ? "flex" : "none";
+
+    document.getElementById("tab-primary").classList.toggle("active", tab === "primary");
+    document.getElementById("tab-general").classList.toggle("active", tab === "general");
+
+    document.getElementById("chatSearch").value = "";
+    filterChats();
+
+}
+
+function relativeTime(isoString) {
+
+    const then = new Date(isoString);
+    const now = new Date();
+
+    const seconds = Math.floor((now - then) / 1000);
+
+    if (seconds < 60) return "now";
+
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return minutes + "m";
+
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return hours + "h";
+
+    const days = Math.floor(hours / 24);
+    if (days < 7) return days + "d";
+
+    const weeks = Math.floor(days / 7);
+    if (weeks < 5) return weeks + "w";
+
+    const months = Math.floor(days / 30);
+    return months + "mo";
+
+}
+
+document.querySelectorAll(".chat-time[data-timestamp]").forEach(el => {
+    el.textContent = relativeTime(el.dataset.timestamp);
+});
+
+const searchInput = document.getElementById("chatSearch");
+
+function filterChats() {
+
+    const query = searchInput.value.toLowerCase().trim();
+
+    const activeTab = document.getElementById("tab-primary").classList.contains("active")
+        ? "primary"
+        : "general";
+
+    const panel = document.getElementById(
+        activeTab === "primary" ? "panel-primary" : "panel-general"
+    );
+
+    const noResults = document.getElementById(
+        activeTab === "primary" ? "noResultsPrimary" : "noResultsGeneral"
+    );
+
+    const rows = panel.querySelectorAll(".chat-row");
+
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+
+        const matches = row.dataset.name.includes(query);
+
+        row.style.display = matches ? "flex" : "none";
+
+        if (matches) visibleCount++;
+
+    });
+
+    if (rows.length > 0) {
+        noResults.style.display = visibleCount === 0 ? "block" : "none";
+    }
+
+}
+
+searchInput.addEventListener("keyup", filterChats);
+
+</script>
+
+</body>
+
+</html>

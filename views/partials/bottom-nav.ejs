@@ -1,3 +1,28 @@
+<style>
+
+.bottom-nav a {
+    position: relative;
+}
+
+.nav-badge {
+    position: absolute;
+    top: -4px;
+    right: 14px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 50px;
+    background: #dc3545;
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+</style>
+
 <div class="bottom-nav">
 
     <a href="/student-dashboard" class="active">
@@ -16,11 +41,23 @@
 
     </a>
 
-    <a href="/fest">
+    <a href="/inbox">
 
-        <i class="bi bi-star-fill"></i>
+        <i class="bi bi-send"></i>
 
-        <p>Youth Fest</p>
+        <p>Message</p>
+
+    </a>
+
+    <a href="/notifications">
+
+        <i class="bi bi-bell-fill"></i>
+
+        <% if (unreadNotifCount > 0) { %>
+            <span class="nav-badge"><%= unreadNotifCount %></span>
+        <% } %>
+
+        <p>Alerts</p>
 
     </a>
 

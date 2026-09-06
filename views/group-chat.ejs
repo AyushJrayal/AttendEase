@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>
+        <%= group.name %>
+    </title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+        rel="stylesheet">
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="/css/chat.css">
+
+    <script src="/socket.io/socket.io.js"></script>
+
+</head>
+
+<body>
+
+<div class="chat-container">
+
+    <!-- HEADER -->
+
+    <div class="chat-header">
+
+        <a href="/inbox" class="back">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+
+        <div class="avatar">
+            <i class="bi bi-people-fill"></i>
+        </div>
+
+        <div class="student-info">
+
+            <h5>
+                <%= group.name %>
+            </h5>
+
+            <small class="offline-status">
+                <%= group.members.length %> members
+            </small>
+
+        </div>
+
+    </div>
+
+    <!-- MESSAGES -->
+
+    <div class="messages" id="messages">
+
+        <% if (messages.length === 0) { %>
+
+            <div style="text-align:center; color:#999; margin-top:40px;">
+                <i class="bi bi-chat-dots" style="font-size:35px;"></i>
+                <p>Start the conversation 👋</p>
+            </div>
+
+        <% } %>
+
+        <% let lastDate = ""; %>
+
+        <% messages.forEach(msg => { %>
+
+            <%
+                const messageDate = new Date(msg.createdAt);
+                const dateKey = messageDate.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
+                let dateLabel = "";
+                const today = new Date();
+                const todayKey = today.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayKey = yesterday.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" });
+
+                if (dateKey === todayKey) {
+                    dateLabel = "TODAY";
+                } else if (dateKey === yesterdayKey) {
+                    dateLabel = "YESTERDAY";
+                } else {
+                    dateLabel = messageDate.toLocaleDateString("en-IN", {
+                        timeZone: "Asia/Kolkata", day: "numeric", month: "long", year: "numeric"
+                    }).toUpperCase();
+                }
+            %>
+
+            <% if (dateKey !== lastDate) { %>
+                <div class="chat-date"><span><%= dateLabel %></span></div>
+                <% lastDate = dateKey; %>
+            <% } %>
+
+            <%
+                const isSent = msg.sender.toString() === currentStudent._id.toString();
+            %>
+
+            <div
+                class="message <%= isSent ? 'sent' : 'received' %> <%= msg.imageUrl ? 'has-media' : '' %>"
+                data-message-id="<%= msg._id %>"
+                data-sender="<%= msg.sender %>"
+            >
+
+                <% if (!isSent) { %>
+                    <span class="group-sender-name"><%= msg.senderName %></span>
+                <% } %>
+
+                <% if (msg.imageUrl) { %>
+
+                    <img
+                        src="<%= msg.imageUrl %>"
+                        class="chat-image"
+                        alt="image message">
+
+                <% } else { %>
+
+                    <span class="message-text"><%= msg.text %></span>
+
+                <% } %>
+
+                <span class="message-time">
+
+                    <%= new Date(msg.createdAt).toLocaleTimeString("en-IN", {
+                        timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: true
+                    }) %>
+
+                </span>
+
+            </div>
+
+        <% }) %>
+
+    </div>
+
+    <div id="typingIndicator" class="typing-indicator">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+
+    <div id="imagePreviewBar" class="image-preview-bar" style="display:none;">
+        <div class="image-preview-wrap">
+            <img id="imagePreviewThumb" src="" alt="preview">
+            <button type="button" id="cancelImage" class="cancel-image">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- INPUT -->
+
+    <form class="chat-input" id="chatForm" enctype="multipart/form-data">
+
+        <label for="imageInput" class="attach-btn">
+            <i class="bi bi-image-fill"></i>
+        </label>
+
+        <input
+            type="file"
+            id="imageInput"
+            accept="image/*"
+            style="display:none;">
+
+        <input
+            type="text"
+            id="messageInput"
+            placeholder="Message the group..."
+            autocomplete="off"
+            maxlength="1000">
+
+        <button type="submit" class="send-btn">
+            <i class="bi bi-send-fill"></i>
+        </button>
+
+    </form>
+
+    <div id="imageViewer" class="image-viewer" style="display:none;">
+        <button id="closeViewer" class="close-viewer">
+            <i class="bi bi-x-lg"></i>
+        </button>
+        <img id="viewerImg" src="" alt="full image">
+    </div>
+
+</div>
+
+<style>
+.group-sender-name {
+    display: block;
+    font-size: 12px;
+    font-weight: 700;
+    color: #0E6B3F;
+    margin-bottom: 3px;
+}
+</style>
+
+<script>
+
+const chatForm = document.getElementById("chatForm");
+const messageInput = document.getElementById("messageInput");
+const messagesContainer = document.getElementById("messages");
+
+const groupId = "<%= group._id %>";
+const currentStudentId = "<%= currentStudent._id %>";
+const currentStudentName = "<%= currentStudent.name %>";
+
+const socket = io();
+
+const typingIndicator = document.getElementById("typingIndicator");
+
+socket.emit("studentJoin", { _id: currentStudentId });
+socket.emit("joinGroup", { groupId: groupId });
+
+// ===============================
+// TYPING INDICATOR
+// ===============================
+
+let typingTimer;
+let typingNames = new Set();
+
+messageInput.addEventListener("input", () => {
+
+    if (messageInput.value.trim().length > 0) {
+
+        socket.emit("groupTyping", {
+            groupId: groupId,
+            senderId: currentStudentId,
+            senderName: currentStudentName
+        });
+
+        clearTimeout(typingTimer);
+
+        typingTimer = setTimeout(() => {
+            socket.emit("groupStopTyping", {
+                groupId: groupId,
+                senderId: currentStudentId
+            });
+        }, 1000);
+
+    } else {
+
+        clearTimeout(typingTimer);
+
+        socket.emit("groupStopTyping", {
+            groupId: groupId,
+            senderId: currentStudentId
+        });
+    }
+});
+
+socket.on("userTypingGroup", (data) => {
+
+    if (data.senderId === currentStudentId) return;
+
+    typingNames.add(data.senderName);
+    typingIndicator.style.display = "flex";
+    scrollToBottom();
+});
+
+socket.on("userStoppedTypingGroup", (data) => {
+
+    typingIndicator.style.display = "none";
+    scrollToBottom();
+});
+
+// ===============================
+// RECEIVE GROUP MESSAGE
+// ===============================
+
+socket.on("newGroupMessage", (data) => {
+
+    if (data.groupId !== groupId) return;
+
+    if (data.sender === currentStudentId) return;
+
+    addMessage(data, "received");
+
+    const sound = document.getElementById("messageSound");
+    if (sound) {
+        sound.currentTime = 0;
+        sound.play().catch(() => {});
+    }
+});
+
+// ===============================
+// SCROLL
+// ===============================
+
+function scrollToBottom() {
+    messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+
+scrollToBottom();
+
+// ===============================
+// ADD MESSAGE
+// ===============================
+
+function addMessage(message, type) {
+
+    const div = document.createElement("div");
+    div.className = `message ${type}`;
+    if (message.imageUrl) div.classList.add("has-media");
+
+    div.dataset.messageId = message._id;
+    div.dataset.sender = message.sender;
+
+    const time = new Date(message.createdAt)
+        .toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+    let nameHtml = "";
+    if (type === "received") {
+        nameHtml = `<span class="group-sender-name">${escapeHtml(message.senderName)}</span>`;
+    }
+
+    let bodyHtml = "";
+    if (message.imageUrl) {
+        bodyHtml = `<img src="${message.imageUrl}" class="chat-image" alt="image message">`;
+    } else {
+        bodyHtml = `<span class="message-text">${escapeHtml(message.text)}</span>`;
+    }
+
+    div.innerHTML = `
+        ${nameHtml}
+        ${bodyHtml}
+        <span class="message-time">${time}</span>
+    `;
+
+    messagesContainer.appendChild(div);
+    scrollToBottom();
+}
+
+function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text || "";
+    return div.innerHTML;
+}
+
+// ===============================
+// SEND MESSAGE
+// ===============================
+
+chatForm.addEventListener("submit", async (e) => {
+
+    e.preventDefault();
+
+    const message = messageInput.value.trim();
+
+    if (!message && !selectedImageFile) return;
+
+    messageInput.value = "";
+    const fileToSend = imageInput.files[0];
+    imageInput.value = "";
+    selectedImageFile = null;
+    imagePreviewBar.style.display = "none";
+    messageInput.focus();
+
+    socket.emit("groupStopTyping", {
+        groupId: groupId,
+        senderId: currentStudentId
+    });
+
+    try {
+
+        const formData = new FormData();
+        formData.append("groupId", groupId);
+        formData.append("message", message);
+
+        if (fileToSend) {
+            formData.append("image", fileToSend);
+        }
+
+        const response = await fetch("/group-messages", {
+            method: "POST",
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (!data.success) {
+            alert(data.message);
+            return;
+        }
+
+        addMessage(data.message, "sent");
+
+    } catch (error) {
+        console.error("Send group message error:", error);
+        alert("Unable to send message.");
+    }
+
+});
+
+messageInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        chatForm.requestSubmit();
+    }
+});
+
+// ===============================
+// IMAGE PICKER + PREVIEW
+// ===============================
+
+const imageInput = document.getElementById("imageInput");
+const imagePreviewBar = document.getElementById("imagePreviewBar");
+const imagePreviewThumb = document.getElementById("imagePreviewThumb");
+const cancelImageBtn = document.getElementById("cancelImage");
+
+let selectedImageFile = null;
+
+imageInput.addEventListener("change", () => {
+
+    const file = imageInput.files[0];
+    if (!file) return;
+
+    selectedImageFile = file;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        imagePreviewThumb.src = e.target.result;
+        imagePreviewBar.style.display = "block";
+    };
+    reader.readAsDataURL(file);
+});
+
+cancelImageBtn.addEventListener("click", () => {
+    selectedImageFile = null;
+    imageInput.value = "";
+    imagePreviewBar.style.display = "none";
+});
+
+// ===============================
+// IMAGE VIEWER
+// ===============================
+
+const imageViewer = document.getElementById("imageViewer");
+const viewerImg = document.getElementById("viewerImg");
+const closeViewerBtn = document.getElementById("closeViewer");
+
+messagesContainer.addEventListener("click", (e) => {
+    const img = e.target.closest(".chat-image");
+    if (!img) return;
+
+    viewerImg.src = img.src;
+    imageViewer.style.display = "flex";
+});
+
+closeViewerBtn.addEventListener("click", () => {
+    imageViewer.style.display = "none";
+    viewerImg.src = "";
+});
+
+imageViewer.addEventListener("click", (e) => {
+    if (e.target === imageViewer) {
+        imageViewer.style.display = "none";
+        viewerImg.src = "";
+    }
+});
+
+</script>
+
+<audio id="messageSound" preload="auto" src="/sounds/message.mp3"></audio>
+
+</body>
+
+</html>

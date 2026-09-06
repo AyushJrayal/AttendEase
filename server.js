@@ -28,6 +28,14 @@ const MenuItem = require("./models/MenuItem");
 
 const CanteenOwner = require("./models/CanteenOwner");
 
+const Group = require("./models/Group");
+
+const GroupMessage = require("./models/GroupMessage");
+
+const Follow = require("./models/Follow");
+
+const Notification = require("./models/Notification");
+
 const path = require("path");
 
 const app = express();
@@ -75,6 +83,20 @@ const menuStorage = new CloudinaryStorage({
 
 const uploadMenuPhoto = multer({
     storage: menuStorage,
+    limits: { fileSize: 5 * 1024 * 1024 }
+});
+
+const profileStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: "attendease-profiles",
+        resource_type: "image",
+        allowed_formats: ["jpg", "jpeg", "png", "webp"]
+    }
+});
+
+const uploadProfilePhoto = multer({
+    storage: profileStorage,
     limits: { fileSize: 5 * 1024 * 1024 }
 });
 
@@ -224,6 +246,10 @@ socket.on("markMessagesRead", async (data) => {
                 }
             }
         );
+                await Notification.updateMany(
+            { recipient: data.studentId, sender: data.otherStudentId, type: "message" },
+            { read: true, count: 0 }
+        );
 
         // Tell the sender EXACTLY which messages were read
         io.to(`student:${data.otherStudentId}`).emit(
@@ -325,6 +351,11 @@ socket.on("markMessagesRead", async (data) => {
                 }
             }
         );
+                await Notification.updateMany(
+            { recipient: data.studentId, sender: data.otherStudentId, type: "message" },
+            { read: true, count: 0 }
+        );
+        
 
         console.log(
             `Messages marked as read: ${data.otherStudentId} -> ${data.studentId}`
@@ -358,6 +389,51 @@ socket.on("stopTyping", (data) => {
         senderId: data.senderId
     });
 });
+
+        // ===============================
+    // GROUP CHAT - JOIN ROOM
+    // ===============================
+
+    socket.on("joinGroup", (data) => {
+
+        if (!data || !data.groupId) {
+            return;
+        }
+
+        socket.join(`group:${data.groupId}`);
+
+        console.log(`Socket joined group room: group:${data.groupId}`);
+
+    });
+
+    // ===============================
+    // GROUP CHAT - TYPING
+    // ===============================
+
+    socket.on("groupTyping", (data) => {
+
+        if (!data || !data.groupId || !data.senderId || !data.senderName) {
+            return;
+        }
+
+        socket.to(`group:${data.groupId}`).emit("userTypingGroup", {
+            senderId: data.senderId,
+            senderName: data.senderName
+        });
+
+    });
+
+    socket.on("groupStopTyping", (data) => {
+
+        if (!data || !data.groupId || !data.senderId) {
+            return;
+        }
+
+        socket.to(`group:${data.groupId}`).emit("userStoppedTypingGroup", {
+            senderId: data.senderId
+        });
+
+    });
 
 
     // ===============================
@@ -444,6 +520,29 @@ app.use(session({
     }
 
 }));
+
+app.use(async (req, res, next) => {
+
+    res.locals.unreadNotifCount = 0;
+
+    if (req.session.student) {
+
+        try {
+
+            res.locals.unreadNotifCount = await Notification.countDocuments({
+                recipient: req.session.student._id,
+                read: false
+            });
+
+        } catch (error) {
+            console.error("Unread notification count error:", error);
+        }
+
+    }
+
+    next();
+
+});
 
 app.set("view engine", "ejs");
 
@@ -931,6 +1030,11 @@ app.get("/student-dashboard", async (req, res) => {
 
     }
 
+        const unreadNotifCount = await Notification.countDocuments({
+        recipient: req.session.student._id,
+        read: false
+    });
+
     res.render("student-dashboard", {
 
         student: req.session.student,
@@ -948,18 +1052,34 @@ app.get("/student-dashboard", async (req, res) => {
 });
 
 
-app.get("/student-profile", (req, res) => {
+app.get("/student-profile", async (req, res) => {
 
     if (!req.session.student) {
-
         return res.redirect("/login");
     }
 
-    res.render("student-profile", {
+    try {
 
-        student: req.session.student
+        const currentStudentId = req.session.student._id;
 
-    });
+        const followersCount = await Follow.countDocuments({
+            following: currentStudentId
+        });
+
+        const followingCount = await Follow.countDocuments({
+            follower: currentStudentId
+        });
+
+        res.render("student-profile", {
+            student: req.session.student,
+            followersCount,
+            followingCount
+        });
+
+    } catch (error) {
+        console.error("Student profile error:", error);
+        res.status(500).send("Unable to load profile.");
+    }
 
 });
 
@@ -1457,6 +1577,132 @@ app.get("/students", async (req, res) => {
 
 });
 
+app.get("/inbox", async (req, res) => {
+    try {
+
+        if (!req.session.student) {
+            return res.redirect("/login");
+        }
+
+        const currentStudentId = new mongoose.Types.ObjectId(req.session.student._id);
+
+        // ===============================
+        // PRIMARY - one-to-one conversations
+        // ===============================
+
+        const conversations = await Message.aggregate([
+
+            {
+                $match: {
+                    $or: [
+                        { sender: currentStudentId },
+                        { receiver: currentStudentId }
+                    ]
+                }
+            },
+
+            {
+                $addFields: {
+                    otherStudent: {
+                        $cond: [
+                            { $eq: ["$sender", currentStudentId] },
+                            "$receiver",
+                            "$sender"
+                        ]
+                    }
+                }
+            },
+
+            {
+                $sort: { createdAt: -1 }
+            },
+
+            {
+                $group: {
+                    _id: "$otherStudent",
+                    lastMessage: { $first: "$message" },
+                    lastMediaType: { $first: "$mediaType" },
+                    lastCreatedAt: { $first: "$createdAt" },
+                    unreadCount: {
+                        $sum: {
+                            $cond: [
+                                {
+                                    $and: [
+                                        { $eq: ["$receiver", currentStudentId] },
+                                        { $ne: ["$status", "read"] }
+                                    ]
+                                },
+                                1,
+                                0
+                            ]
+                        }
+                    }
+                }
+            },
+
+            {
+                $sort: { lastCreatedAt: -1 }
+            }
+
+        ]);
+
+        const primaryChats = [];
+
+        for (const convo of conversations) {
+
+            const otherStudent = await Student.findById(convo._id)
+    .select("name rollNo department semester section photo");
+
+            if (!otherStudent) {
+                continue;
+            }
+
+            let previewText = convo.lastMessage;
+
+            if (!previewText && convo.lastMediaType === "image") {
+                previewText = "Photo";
+            } else if (!previewText && convo.lastMediaType === "voice") {
+                previewText = "Voice message";
+            }
+
+            primaryChats.push({
+                student: otherStudent,
+                lastMessage: previewText || "",
+                unreadCount: convo.unreadCount,
+                lastCreatedAt: convo.lastCreatedAt
+            });
+
+        }
+
+        // ===============================
+        // GENERAL - group chats
+        // ===============================
+
+        const groups = await Group.find({
+            members: currentStudentId
+        }).sort({ updatedAt: -1 });
+
+        const generalChats = groups.map(group => ({
+            _id: group._id,
+            name: group.name,
+            photoUrl: group.photoUrl,
+            memberCount: group.members.length
+        }));
+
+        res.render("inbox", {
+            student: req.session.student,
+            primaryChats,
+            generalChats
+        });
+
+    } catch (error) {
+
+        console.error("Inbox error:", error);
+        res.status(500).send("Unable to load inbox.");
+
+    }
+});
+
 app.get("/studentss", async (req, res) => {
     try {
         if (!req.session.student) {
@@ -1707,6 +1953,12 @@ app.post("/messages", upload.single("image"), async (req, res) => {
             "message sender mediaUrl mediaType deleted"
         );
 
+                await Notification.findOneAndUpdate(
+            { recipient: receiver, sender, type: "message" },
+            { read: false, $inc: { count: 1 } },
+            { upsert: true, new: true }
+        );
+
         // ===============================
         // PAYLOAD
         // ===============================
@@ -1936,11 +2188,16 @@ app.get("/chat/:studentId", async (req, res) => {
                 receiver: currentStudent._id,
                 status: { $ne: "read" }
             },
+            
             {
                 $set: {
                     status: "read"
                 }
             }
+        );
+                await Notification.updateMany(
+            { recipient: currentStudent._id, sender: otherStudentId, type: "message" },
+            { read: true, count: 0 }
         );
 
         // Don't allow messaging yourself
@@ -2262,6 +2519,464 @@ app.get("/order-confirmation/:id", async (req, res) => {
     } catch (error) {
         console.error("Order confirmation error:", error);
         res.status(500).send("Unable to load order.");
+    }
+
+});
+
+app.get("/create-group", async (req, res) => {
+    try {
+
+        if (!req.session.student) {
+            return res.redirect("/login");
+        }
+
+        const students = await Student.find({
+            _id: { $ne: req.session.student._id }
+        }).select("name email department semester section");
+
+        res.render("create-group", {
+            students,
+            currentStudent: req.session.student
+        });
+
+    } catch (error) {
+        console.error("Create group page error:", error);
+        res.status(500).send("Unable to load create group page.");
+    }
+});
+
+app.post("/create-group", async (req, res) => {
+    try {
+
+        if (!req.session.student) {
+            return res.redirect("/login");
+        }
+
+        const { groupName, members } = req.body;
+
+        if (!groupName || !groupName.trim()) {
+            return res.status(400).send("Group name is required.");
+        }
+
+        // Convert selected member into an array
+        let selectedMembers = [];
+
+        if (members) {
+            selectedMembers = Array.isArray(members)
+                ? members
+                : [members];
+        }
+
+        // Creator automatically becomes a member
+        const allMembers = [
+            req.session.student._id,
+            ...selectedMembers
+        ];
+
+        // Remove duplicate student IDs
+        const uniqueMembers = [
+            ...new Set(allMembers.map(id => id.toString()))
+        ];
+
+        const group = await Group.create({
+            name: groupName.trim(),
+            createdBy: req.session.student._id,
+            members: uniqueMembers
+        });
+
+        console.log("New group created:", group._id.toString());
+
+        res.redirect("/studentss");
+
+    } catch (error) {
+
+        console.error("Create group error:", error);
+
+        res.status(500).send("Unable to create group.");
+
+    }
+});
+
+// ================= GROUP CHAT PAGE =================
+
+app.get("/group-chat/:groupId", async (req, res) => {
+
+    try {
+
+        if (!req.session.student) {
+            return res.redirect("/login");
+        }
+
+        const currentStudent = req.session.student;
+        const groupId = req.params.groupId;
+
+        const group = await Group.findById(groupId);
+
+        if (!group) {
+            return res.status(404).send("Group not found.");
+        }
+
+        // Only members can open the group chat
+        const isMember = group.members.some(
+            memberId => memberId.toString() === currentStudent._id.toString()
+        );
+
+        if (!isMember) {
+            return res.status(403).send("You are not a member of this group.");
+        }
+
+        const messages = await GroupMessage.find({
+            groupId: group._id
+        }).sort({ createdAt: 1 });
+
+        res.render("group-chat", {
+
+            currentStudent,
+            group,
+            messages
+
+        });
+
+    } catch (error) {
+
+        console.error("Group chat page error:", error);
+
+        res.status(500).send("Unable to open group chat.");
+
+    }
+
+});
+
+// ================= SEND GROUP MESSAGE =================
+
+app.post("/group-messages", upload.single("image"), async (req, res) => {
+
+    try {
+
+        if (!req.session.student) {
+            return res.status(401).json({
+                success: false,
+                message: "Please login first."
+            });
+        }
+
+        const sender = req.session.student._id;
+        const senderName = req.session.student.name;
+
+        const { groupId, message } = req.body;
+
+        if (!groupId) {
+            return res.status(400).json({
+                success: false,
+                message: "Group is required."
+            });
+        }
+
+        const group = await Group.findById(groupId);
+
+        if (!group) {
+            return res.status(404).json({
+                success: false,
+                message: "Group not found."
+            });
+        }
+
+        const isMember = group.members.some(
+            memberId => memberId.toString() === sender.toString()
+        );
+
+        if (!isMember) {
+            return res.status(403).json({
+                success: false,
+                message: "You are not a member of this group."
+            });
+        }
+
+        const hasText = message && message.trim();
+        const hasImage = req.file;
+
+        if (!hasText && !hasImage) {
+            return res.status(400).json({
+                success: false,
+                message: "Message cannot be empty."
+            });
+        }
+
+        const newMessage = await GroupMessage.create({
+
+            groupId,
+            sender,
+            senderName,
+
+            text: hasText ? message.trim() : "",
+
+            imageUrl: hasImage ? req.file.path : "",
+
+            status: "sent"
+
+        });
+
+        const payload = {
+
+            _id: newMessage._id,
+
+            groupId: groupId.toString(),
+
+            sender: sender.toString(),
+
+            senderName,
+
+            text: newMessage.text,
+
+            imageUrl: newMessage.imageUrl,
+
+            createdAt: newMessage.createdAt
+
+        };
+
+        io.to(`group:${groupId}`).emit("newGroupMessage", payload);
+
+        res.json({
+            success: true,
+            message: payload
+        });
+
+    } catch (error) {
+
+        console.error("Send group message error:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Unable to send message."
+        });
+
+    }
+
+});
+
+// ================= PROFILE PICTURE UPLOAD =================
+
+app.post("/profile-picture", uploadProfilePhoto.single("photo"), async (req, res) => {
+
+    try {
+
+        if (!req.session.student) {
+            return res.redirect("/login");
+        }
+
+        if (!req.file) {
+            return res.redirect("/student-profile");
+        }
+
+        const updatedStudent = await Student.findByIdAndUpdate(
+            req.session.student._id,
+            { photo: req.file.path },
+            { new: true }
+        );
+
+        // Keep session in sync so the new photo shows immediately
+        req.session.student = updatedStudent;
+
+        res.redirect("/student-profile");
+
+    } catch (error) {
+
+        console.error("Profile picture upload error:", error);
+        res.status(500).send("Unable to upload profile picture.");
+
+    }
+
+});
+
+// ================= VIEW ANOTHER STUDENT'S PROFILE =================
+
+app.get("/profile/:studentId", async (req, res) => {
+
+    try {
+
+        if (!req.session.student) {
+            return res.redirect("/login");
+        }
+
+        const currentStudentId = req.session.student._id;
+        const profileStudentId = req.params.studentId;
+
+        const profileStudent = await Student.findById(profileStudentId);
+
+        if (!profileStudent) {
+            return res.status(404).send("Student not found.");
+        }
+
+        const followersCount = await Follow.countDocuments({
+            following: profileStudentId
+        });
+
+        const followingCount = await Follow.countDocuments({
+            follower: profileStudentId
+        });
+
+        const existingFollow = await Follow.findOne({
+            follower: currentStudentId,
+            following: profileStudentId
+        });
+
+        const isOwnProfile =
+            currentStudentId.toString() === profileStudentId;
+
+        res.render("profile", {
+
+            profileStudent,
+            followersCount,
+            followingCount,
+            isFollowing: !!existingFollow,
+            isOwnProfile
+
+        });
+
+    } catch (error) {
+
+        console.error("Profile page error:", error);
+        res.status(500).send("Unable to load profile.");
+
+    }
+
+});
+
+// ================= FOLLOW / UNFOLLOW =================
+
+app.post("/follow/:studentId", async (req, res) => {
+
+    try {
+
+        if (!req.session.student) {
+            return res.redirect("/login");
+        }
+
+        const followerId = req.session.student._id;
+        const followingId = req.params.studentId;
+
+        if (followerId.toString() === followingId) {
+            return res.redirect("/profile/" + followingId);
+        }
+
+        const existingFollow = await Follow.findOne({
+            follower: followerId,
+            following: followingId
+        });
+
+        if (!existingFollow) {
+            await Follow.create({
+                follower: followerId,
+                following: followingId
+            });
+
+                    await Notification.findOneAndUpdate(
+            { recipient: followingId, sender: followerId, type: "follow" },
+            { read: false },
+            { upsert: true, new: true }
+        );
+        }
+
+        res.redirect("/profile/" + followingId);
+
+    } catch (error) {
+
+        console.error("Follow error:", error);
+        res.status(500).send("Unable to follow student.");
+
+    }
+
+});
+
+app.post("/unfollow/:studentId", async (req, res) => {
+
+    try {
+
+        if (!req.session.student) {
+            return res.redirect("/login");
+        }
+
+        const followerId = req.session.student._id;
+        const followingId = req.params.studentId;
+
+        await Follow.deleteOne({
+            follower: followerId,
+            following: followingId
+        });
+
+        res.redirect("/profile/" + followingId);
+
+    } catch (error) {
+
+        console.error("Unfollow error:", error);
+        res.status(500).send("Unable to unfollow student.");
+
+    }
+
+});
+
+app.get("/notifications", async (req, res) => {
+
+    try {
+
+        if (!req.session.student) {
+            return res.redirect("/login");
+        }
+
+        const currentStudentId = req.session.student._id;
+
+        const notifications = await Notification.find({
+            recipient: currentStudentId
+        })
+            .sort({ updatedAt: -1 })
+            .populate("sender", "name photo");
+
+        // Mark everything as read now that the person has opened the feed
+        await Notification.updateMany(
+            { recipient: currentStudentId, read: false },
+            { read: true }
+        );
+
+        res.render("notifications", {
+            notifications
+        });
+
+    } catch (error) {
+
+        console.error("Notifications error:", error);
+        res.status(500).send("Unable to load notifications.");
+
+    }
+
+});
+
+app.delete("/notifications/:id", async (req, res) => {
+
+    try {
+
+        if (!req.session.student) {
+            return res.status(401).json({ success: false, message: "Please login first." });
+        }
+
+        const notification = await Notification.findById(req.params.id);
+
+        if (!notification) {
+            return res.status(404).json({ success: false, message: "Notification not found." });
+        }
+
+        if (notification.recipient.toString() !== req.session.student._id.toString()) {
+            return res.status(403).json({ success: false, message: "Not authorized." });
+        }
+
+        await Notification.findByIdAndDelete(req.params.id);
+
+        res.json({ success: true });
+
+    } catch (error) {
+
+        console.error("Delete notification error:", error);
+        res.status(500).json({ success: false, message: "Unable to delete notification." });
+
     }
 
 });

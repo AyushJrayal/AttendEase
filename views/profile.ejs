@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title><%= profileStudent.name %> | AttendEase</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="/css/student-dashboard.css">
+
+    <style>
+
+        .ig-profile-wrap {
+            max-width: 420px;
+            margin: 0 auto;
+            padding: 24px 18px 40px;
+            background: linear-gradient(180deg, #dfeaff 0%, #f5f8ff 45%, #ffffff 100%);
+            min-height: 100vh;
+        }
+
+        .ig-top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .ig-back {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #1f2937;
+            text-decoration: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,.06);
+        }
+
+        .ig-card {
+            background: white;
+            border-radius: 24px;
+            padding: 28px 20px 22px;
+            box-shadow: 0 10px 30px rgba(0,0,0,.06);
+            text-align: center;
+        }
+
+        .ig-avatar {
+            width: 96px;
+            height: 96px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #f9a8d4;
+            display: block;
+            margin: 0 auto 14px;
+        }
+
+        .ig-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1f2937;
+            margin: 0 0 4px;
+        }
+
+        .ig-subtitle {
+            font-size: 13px;
+            color: #9ca3af;
+            margin: 0 0 2px;
+        }
+
+        .ig-stats {
+            display: flex;
+            justify-content: center;
+            gap: 34px;
+            margin: 18px 0 20px;
+        }
+
+        .ig-stat {
+            text-align: center;
+        }
+
+        .ig-stat-num {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1f2937;
+            display: block;
+        }
+
+        .ig-stat-label {
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        .ig-action-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .ig-follow-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            border: none;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .ig-follow-btn.follow {
+            background: #0095F6;
+            color: white;
+        }
+
+        .ig-follow-btn.unfollow {
+            background: #efefef;
+            color: #262626;
+        }
+
+        .ig-message-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 10px;
+            background: #0E6B3F;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            text-align: center;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="ig-profile-wrap">
+
+    <div class="ig-top-bar">
+
+        <a href="/studentss" class="ig-back">
+            <i class="bi bi-arrow-left"></i>
+        </a>
+
+    </div>
+
+    <div class="ig-card">
+
+        <img
+            src="<%= profileStudent.photo %>"
+            class="ig-avatar"
+            alt="profile picture">
+
+        <p class="ig-name"><%= profileStudent.name %></p>
+
+        <p class="ig-subtitle">
+            <%= profileStudent.department %>
+        </p>
+
+        <p class="ig-subtitle">
+            Semester <%= profileStudent.semester %> &bull; Section <%= profileStudent.section %>
+        </p>
+
+        <div class="ig-stats">
+
+            <div class="ig-stat">
+                <span class="ig-stat-num"><%= followersCount %></span>
+                <span class="ig-stat-label">Followers</span>
+            </div>
+
+            <div class="ig-stat">
+                <span class="ig-stat-num"><%= followingCount %></span>
+                <span class="ig-stat-label">Follows</span>
+            </div>
+
+        </div>
+
+        <% if (!isOwnProfile) { %>
+
+            <div class="ig-action-row">
+
+                <% if (isFollowing) { %>
+
+                    <form action="/unfollow/<%= profileStudent._id %>" method="POST" style="flex:1;">
+                        <button type="submit" class="ig-follow-btn unfollow" style="width:100%;">
+                            Following
+                        </button>
+                    </form>
+
+                <% } else { %>
+
+                    <form action="/follow/<%= profileStudent._id %>" method="POST" style="flex:1;">
+                        <button type="submit" class="ig-follow-btn follow" style="width:100%;">
+                            Follow
+                        </button>
+                    </form>
+
+                <% } %>
+
+                <a href="/chat/<%= profileStudent._id %>" class="ig-message-btn">
+                    Message
+                </a>
+
+            </div>
+
+        <% } %>
+
+    </div>
+
+</div>
+
+</body>
+</html>

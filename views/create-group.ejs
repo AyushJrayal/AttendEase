@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Create Group | AttendEase</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+        rel="stylesheet"
+    >
+
+    <style>
+
+        body {
+            background: #f5f7fb;
+            font-family: Arial, sans-serif;
+        }
+
+        .group-page {
+            max-width: 650px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        .group-card {
+            background: white;
+            border-radius: 18px;
+            padding: 25px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+        }
+
+        .group-title {
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .group-subtitle {
+            color: #777;
+            margin-bottom: 25px;
+        }
+
+        .student-list {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e5e5e5;
+            border-radius: 12px;
+        }
+
+        .student-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+
+        .student-item:last-child {
+            border-bottom: none;
+        }
+
+        .student-item:hover {
+            background: #f8f9fa;
+        }
+
+        .student-info {
+            flex: 1;
+        }
+
+        .student-name {
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .student-details {
+            font-size: 13px;
+            color: #777;
+            margin: 3px 0 0;
+        }
+
+        .create-btn {
+            background: #0B5D3B;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .create-btn:hover {
+            background: #094d31;
+            color: white;
+        }
+
+        .back-btn {
+            text-decoration: none;
+            color: #555;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .no-students {
+            padding: 30px;
+            text-align: center;
+            color: #777;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <div class="group-page">
+
+        <a href="/studentss" class="back-btn">
+            <i class="bi bi-arrow-left"></i>
+            Back to Messages
+        </a>
+
+        <div class="group-card">
+
+            <h2 class="group-title">
+                Create New Group
+            </h2>
+
+            <p class="group-subtitle">
+                Choose a name and select the students you want in this group.
+            </p>
+
+            <form method="POST" action="/create-group">
+
+                <div class="mb-4">
+
+                    <label class="form-label">
+                        Group Name
+                    </label>
+
+                    <input
+                        type="text"
+                        name="groupName"
+                        class="form-control"
+                        placeholder="Enter group name"
+                        required
+                        maxlength="50"
+                    >
+
+                </div>
+
+                <label class="form-label">
+                    Select Students
+                </label>
+
+                <div class="student-list">
+
+                    <% if (students.length === 0) { %>
+
+                        <div class="no-students">
+                            No other students available.
+                        </div>
+
+                    <% } else { %>
+
+                        <% students.forEach(student => { %>
+
+                            <label class="student-item">
+
+                                <input
+                                    type="checkbox"
+                                    name="members"
+                                    value="<%= student._id %>"
+                                    class="form-check-input"
+                                >
+
+                                <div class="student-info">
+
+                                    <p class="student-name">
+                                        <%= student.name %>
+                                    </p>
+
+                                    <p class="student-details">
+
+                                        <%= student.department %>
+                                        · Semester <%= student.semester %>
+                                        · Section <%= student.section %>
+
+                                    </p>
+
+                                </div>
+
+                            </label>
+
+                        <% }) %>
+
+                    <% } %>
+
+                </div>
+
+                <button
+                    type="submit"
+                    class="create-btn"
+                >
+                    <i class="bi bi-people-fill"></i>
+                    Create Group
+                </button>
+
+            </form>
+
+        </div>
+
+    </div>
+
+</body>
+
+</html>
