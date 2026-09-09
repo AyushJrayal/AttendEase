@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title><%= group.name %> | Group Info</title>
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.7/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+        rel="stylesheet"
+    >
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: #f5f7fb;
+            font-family: Arial, sans-serif;
+        }
+
+        .group-info-page {
+            max-width: 650px;
+            margin: 0 auto;
+            min-height: 100vh;
+            background: #fff;
+        }
+
+        .top-bar {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 18px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .back-btn {
+            color: #222;
+            font-size: 22px;
+            text-decoration: none;
+        }
+
+        .top-bar h4 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .group-profile {
+            text-align: center;
+            padding: 30px 20px 25px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .group-avatar {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: #eaf3ee;
+            color: #0E6B3F;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 15px;
+            font-size: 38px;
+        }
+
+        .group-profile h2 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 700;
+        }
+
+        .member-count {
+            color: #777;
+            margin-top: 5px;
+        }
+
+        .section {
+            padding: 20px;
+        }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #777;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .member {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .member-avatar {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #eef2f0;
+            color: #0E6B3F;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-right: 12px;
+        }
+
+        .member-details {
+            flex: 1;
+        }
+
+        .member-name {
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .member-extra {
+            color: #888;
+            font-size: 12px;
+            margin: 3px 0 0;
+        }
+
+        .admin-badge {
+            font-size: 11px;
+            padding: 4px 8px;
+            border-radius: 20px;
+            background: #eaf3ee;
+            color: #0E6B3F;
+            font-weight: 600;
+        }
+
+        .action-btn {
+            width: 100%;
+            border: none;
+            border-radius: 10px;
+            padding: 12px;
+            margin-top: 10px;
+            font-weight: 600;
+        }
+
+        .add-btn {
+            background: #0E6B3F;
+            color: white;
+        }
+
+        .edit-btn {
+            background: #f0f3f1;
+            color: #0E6B3F;
+        }
+
+        .remove-btn {
+            border: none;
+            background: transparent;
+            color: #dc3545;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .member-select {
+            border-radius: 10px;
+        }
+
+        .admin-actions {
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="group-info-page">
+
+    <!-- TOP BAR -->
+    <div class="top-bar">
+
+        
+            href="/group-chat/<%= group._id %>"
+            class="back-btn"
+        >
+            <i class="bi bi-arrow-left"></i>
+        </a>
+
+        <h4>
+            Group Info
+        </h4>
+
+    </div>
+
+
+    <!-- GROUP PROFILE -->
+    <div class="group-profile">
+
+        <div class="group-avatar">
+            <i class="bi bi-people-fill"></i>
+        </div>
+
+        <h2 id="groupName">
+            <%= group.name %>
+        </h2>
+
+        <div class="member-count">
+
+            <span id="memberCount">
+                <%= group.members.length %>
+            </span>
+
+            members
+
+        </div>
+
+    </div>
+
+
+    <!-- ADMIN -->
+    <div class="section">
+
+        <div class="section-title">
+            Group Admin
+        </div>
+
+        <div class="member">
+
+            <div class="member-avatar">
+                <i class="bi bi-person-fill"></i>
+            </div>
+
+            <div class="member-details">
+
+                <p class="member-name">
+                    <%= group.createdBy.name %>
+                </p>
+
+                <p class="member-extra">
+                    Group creator
+                </p>
+
+            </div>
+
+            <span class="admin-badge">
+                Admin
+            </span>
+
+        </div>
+
+    </div>
+
+
+    <!-- MEMBERS -->
+    <div class="section">
+
+        <div class="section-title">
+            Members
+        </div>
+
+        <div id="membersList">
+
+            <% group.members.forEach(member => { %>
+
+                <div
+                    class="member"
+                    data-member-id="<%= member._id %>"
+                >
+
+                    <div class="member-avatar">
+                        <i class="bi bi-person-fill"></i>
+                    </div>
+
+                    <div class="member-details">
+
+                        <p class="member-name">
+
+                            <% if (
+                                member._id.toString() ===
+                                currentStudent._id.toString()
+                            ) { %>
+
+                                You
+
+                            <% } else { %>
+
+                                <%= member.name %>
+
+                            <% } %>
+
+                        </p>
+
+                        <p class="member-extra">
+
+                            <%= member.department %>
+                            · Semester <%= member.semester %>
+                            · Section <%= member.section %>
+
+                        </p>
+
+                    </div>
+
+
+                    <% if (
+                        member._id.toString() ===
+                        group.createdBy._id.toString()
+                    ) { %>
+
+                        <span class="admin-badge">
+                            Admin
+                        </span>
+
+                    <% } else if (isAdmin) { %>
+
+                        <button
+                            class="remove-btn"
+                            onclick="removeMember(
+                                '<%= member._id %>',
+                                '<%= member.name %>'
+                            )"
+                        >
+                            Remove
+                        </button>
+
+                    <% } %>
+
+                </div>
+
+            <% }) %>
+
+        </div>
+
+    </div>
+
+
+    <!-- ADMIN CONTROLS -->
+
+    <% if (isAdmin) { %>
+
+        <div class="section admin-actions">
+
+            <div class="section-title">
+                Manage Group
+            </div>
+
+
+            <!-- ADD MEMBER -->
+
+            <select
+                id="studentSelect"
+                class="form-select member-select"
+            >
+
+                <option value="">
+                    Select student to add
+                </option>
+
+            </select>
+
+
+            <button
+                class="action-btn add-btn"
+                onclick="addMember()"
+            >
+
+                <i class="bi bi-person-plus-fill"></i>
+
+                Add Member
+
+            </button>
+
+
+            <!-- EDIT GROUP -->
+
+            <button
+                class="action-btn edit-btn"
+                onclick="editGroup()"
+            >
+
+                <i class="bi bi-pencil-fill"></i>
+
+                Edit Group Name
+
+            </button>
+
+        </div>
+
+    <% } %>
+
+</div>
+
+<script>
+
+const groupId = "<%= group._id %>";
+
+const isAdmin = <%= isAdmin ? "true" : "false" %>;
+
+
+// ===============================
+// STUDENTS AVAILABLE FOR ADDING
+// ===============================
+
+<% if (isAdmin) { %>
+
+const allStudents =
+    <%- JSON.stringify(allStudents) %>;
+
+const currentMembers =
+    <%- JSON.stringify(
+        group.members.map(member => member._id.toString())
+    ) %>;
+
+
+const studentSelect =
+    document.getElementById("studentSelect");
+
+
+allStudents.forEach(student => {
+
+    if (
+        currentMembers.includes(
+            student._id.toString()
+        )
+    ) {
+        return;
+    }
+
+
+    const option =
+        document.createElement("option");
+
+
+    option.value =
+        student._id;
+
+
+    option.textContent =
+        student.name +
+        " · " +
+        student.department +
+        " · Sem " +
+        student.semester +
+        " · " +
+        student.section;
+
+
+    studentSelect.appendChild(option);
+
+});
+
+<% } %>
+
+
+// ===============================
+// ADD MEMBER
+// ===============================
+
+async function addMember() {
+
+    const studentId =
+        document.getElementById(
+            "studentSelect"
+        ).value;
+
+
+    if (!studentId) {
+
+        alert(
+            "Please select a student."
+        );
+
+        return;
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+                "/group/" +
+                groupId +
+                "/add-member",
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        studentId
+                    })
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!data.success) {
+
+            alert(data.message);
+
+            return;
+        }
+
+
+        location.reload();
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Unable to add member."
+        );
+
+    }
+
+}
+
+
+// ===============================
+// REMOVE MEMBER
+// ===============================
+
+async function removeMember(
+    studentId,
+    studentName
+) {
+
+    if (
+        !confirm(
+            "Remove " +
+            studentName +
+            " from this group?"
+        )
+    ) {
+
+        return;
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+                "/group/" +
+                groupId +
+                "/member/" +
+                studentId,
+                {
+                    method: "DELETE"
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!data.success) {
+
+            alert(data.message);
+
+            return;
+        }
+
+
+        location.reload();
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Unable to remove member."
+        );
+
+    }
+
+}
+
+
+// ===============================
+// EDIT GROUP NAME
+// ===============================
+
+async function editGroup() {
+
+    const currentName =
+        document
+            .getElementById("groupName")
+            .textContent
+            .trim();
+
+
+    const newName =
+        prompt(
+            "Enter new group name:",
+            currentName
+        );
+
+
+    if (
+        !newName ||
+        !newName.trim()
+    ) {
+
+        return;
+    }
+
+
+    try {
+
+        const response =
+            await fetch(
+                "/group/" +
+                groupId +
+                "/edit",
+                {
+                    method: "PATCH",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        name: newName.trim()
+                    })
+                }
+            );
+
+
+        const data =
+            await response.json();
+
+
+        if (!data.success) {
+
+            alert(data.message);
+
+            return;
+        }
+
+
+        document
+            .getElementById("groupName")
+            .textContent =
+            data.name;
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Unable to edit group."
+        );
+
+    }
+
+}
+
+</script>
+
+</body>
+
+</html>

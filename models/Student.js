@@ -86,4 +86,6 @@ department: {
 
 });
 
+studentSchema.index({ department: 1, semester: 1, section: 1 });
+
 module.exports = mongoose.model("Student", studentSchema);

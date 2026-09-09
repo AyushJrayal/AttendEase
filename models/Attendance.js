@@ -30,4 +30,7 @@ const attendanceSchema = new mongoose.Schema({
 
 });
 
+attendanceSchema.index({ studentId: 1, sessionId: 1 });
+attendanceSchema.index({ studentId: 1, date: -1 });
+
 module.exports = mongoose.model("Attendance", attendanceSchema);

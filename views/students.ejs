@@ -346,6 +346,17 @@
                 </tbody>
 
             </table>
+            <div class="pagination">
+    <% if (currentPage > 1) { %>
+        <a href="/students?page=<%= currentPage - 1 %>">Previous</a>
+    <% } %>
+
+    <span>Page <%= currentPage %> of <%= totalPages %></span>
+
+    <% if (currentPage < totalPages) { %>
+        <a href="/students?page=<%= currentPage + 1 %>">Next</a>
+    <% } %>
+</div>
 
         </div>
 

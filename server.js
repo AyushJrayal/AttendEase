@@ -51,6 +51,8 @@ const io = new Server(server);
 
 const mongoose = require("mongoose");
 
+const compression = require("compression");
+
 const onlineStudents = new Map();
 
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
@@ -169,108 +171,6 @@ console.log(`Student joined personal room: student:${studentId}`);
 // MESSAGE DELIVERED
 // ===============================
 
-socket.on("messageDelivered", async (data) => {
-    try {
-
-        if (!data || !data.messageId) {
-            return;
-        }
-
-        const updatedMessage = await Message.findByIdAndUpdate(
-            data.messageId,
-            {
-                $set: {
-                    status: "delivered"
-                }
-            },
-            { new: true }
-        );
-
-        if (!updatedMessage) {
-            return;
-        }
-
-        // Tell the sender that message was delivered
-        io.to(`student:${updatedMessage.sender}`).emit(
-            "messageDelivered",
-            {
-                messageId: updatedMessage._id.toString()
-            }
-        );
-
-    } catch (error) {
-        console.error(
-            "Message delivered error:",
-            error
-        );
-    }
-});
-
-// ===============================
-// MESSAGE READ
-// ===============================
-
-socket.on("markMessagesRead", async (data) => {
-
-    try {
-
-        if (
-            !data ||
-            !data.studentId ||
-            !data.otherStudentId
-        ) {
-            return;
-        }
-
-        const messages = await Message.find({
-            sender: data.otherStudentId,
-            receiver: data.studentId,
-            status: { $ne: "read" }
-        }).select("_id");
-
-        if (messages.length === 0) {
-            return;
-        }
-
-        const messageIds = messages.map(
-            message => message._id
-        );
-
-        await Message.updateMany(
-            {
-                _id: { $in: messageIds }
-            },
-            {
-                $set: {
-                    status: "read"
-                }
-            }
-        );
-                await Notification.updateMany(
-            { recipient: data.studentId, sender: data.otherStudentId, type: "message" },
-            { read: true, count: 0 }
-        );
-
-        // Tell the sender EXACTLY which messages were read
-        io.to(`student:${data.otherStudentId}`).emit(
-            "messagesRead",
-            {
-                messageIds: messageIds.map(
-                    id => id.toString()
-                )
-            }
-        );
-
-    } catch (error) {
-
-        console.error(
-            "Mark messages read error:",
-            error
-        );
-
-    }
-
-});
 
 
 
@@ -545,6 +445,8 @@ app.use(async (req, res, next) => {
 });
 
 app.set("view engine", "ejs");
+
+app.use(express.static("public"));
 
 // Serve CSS, JS and Images
 app.use(express.static("public"));
@@ -1185,12 +1087,23 @@ app.get("/attendance", async (req, res) => {
 
 app.get("/attendance-history", async (req, res) => {
 
+    const page = parseInt(req.query.page) || 1;
+    const limit = 50;
+    const skip = (page - 1) * limit;
+
+    const totalRecords = await Attendance.countDocuments();
+
     const attendance = await Attendance.find()
-        .populate("studentId")
-        .sort({ date: -1 });
+        .populate("studentId", "name rollNo department semester section")
+        .sort({ date: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean();
 
     res.render("attendance-history", {
-        attendance
+        attendance,
+        currentPage: page,
+        totalPages: Math.ceil(totalRecords / limit)
     });
 
 });
@@ -1569,10 +1482,23 @@ email: req.body.email,
 
 app.get("/students", async (req, res) => {
 
-    const students = await Student.find();
+    const page = parseInt(req.query.page) || 1;
+    const limit = 50;
+    const skip = (page - 1) * limit;
+
+    const totalStudents = await Student.countDocuments();
+
+    const students = await Student.find()
+        .select("name rollNo department semester section email")
+        .sort({ rollNo: 1 })
+        .skip(skip)
+        .limit(limit)
+        .lean();
 
     res.render("students", {
-        students: students
+        students: students,
+        currentPage: page,
+        totalPages: Math.ceil(totalStudents / limit)
     });
 
 });
@@ -1646,12 +1572,24 @@ app.get("/inbox", async (req, res) => {
 
         ]);
 
+                const otherStudentIds = conversations.map(convo => convo._id);
+
+        const otherStudentsList = await Student.find({
+            _id: { $in: otherStudentIds }
+        })
+            .select("name rollNo department semester section photo")
+            .lean();
+
+        const otherStudentsMap = {};
+        otherStudentsList.forEach(student => {
+            otherStudentsMap[student._id.toString()] = student;
+        });
+
         const primaryChats = [];
 
         for (const convo of conversations) {
 
-            const otherStudent = await Student.findById(convo._id)
-    .select("name rollNo department semester section photo");
+            const otherStudent = otherStudentsMap[convo._id.toString()];
 
             if (!otherStudent) {
                 continue;
@@ -1835,6 +1773,7 @@ app.get("/messages/:studentId", async (req, res) => {
 
         const currentStudentId = req.session.student._id;
         const otherStudentId = req.params.studentId;
+        const limit = 50;
 
         const messages = await Message.find({
 
@@ -1852,9 +1791,13 @@ app.get("/messages/:studentId", async (req, res) => {
 
             ]
 
-        }).sort({
-            createdAt: 1
-        });
+        })
+            .sort({ createdAt: -1 })
+            .limit(limit)
+            .lean();
+
+        // Flip back to oldest-first for display
+        messages.reverse();
 
         res.json({
             success: true,
@@ -2647,6 +2590,421 @@ app.get("/group-chat/:groupId", async (req, res) => {
 
 });
 
+
+app.get("/group-info/:groupId", async (req, res) => {
+
+    try {
+
+        if (!req.session.student) {
+            return res.redirect("/login");
+        }
+
+        const currentStudent = req.session.student;
+        const groupId = req.params.groupId;
+
+        const group = await Group.findById(groupId)
+            .populate("members", "name email department semester section")
+            .populate("createdBy", "name email");
+
+        if (!group) {
+            return res.status(404).send("Group not found.");
+        }
+
+        // Only group members can see group information
+        const isMember = group.members.some(
+            member => member._id.toString() === currentStudent._id.toString()
+        );
+
+        if (!isMember) {
+            return res.status(403).send("You are not a member of this group.");
+        }
+
+        const isAdmin =
+            group.createdBy._id.toString() === currentStudent._id.toString();
+
+        const allStudents = await Student.find({})
+    .select("name email department semester section")
+    .lean();
+
+res.render("group-info", {
+    group,
+    currentStudent,
+    isAdmin,
+    allStudents
+});
+
+    } catch (error) {
+
+        console.error("Group info error:", error);
+
+        res.status(500).send("Unable to load group information.");
+
+    }
+
+});
+
+// ===============================
+// EDIT GROUP
+// ===============================
+
+app.patch("/group/:groupId/edit", async (req, res) => {
+
+    try {
+
+        if (!req.session.student) {
+            return res.status(401).json({
+                success: false,
+                message: "Please login first."
+            });
+        }
+
+        const group = await Group.findById(req.params.groupId);
+
+        if (!group) {
+            return res.status(404).json({
+                success: false,
+                message: "Group not found."
+            });
+        }
+
+        const currentStudentId = req.session.student._id.toString();
+
+        if (group.createdBy.toString() !== currentStudentId) {
+            return res.status(403).json({
+                success: false,
+                message: "Only the group admin can edit the group."
+            });
+        }
+
+        const { name } = req.body;
+
+        if (!name || !name.trim()) {
+            return res.status(400).json({
+                success: false,
+                message: "Group name is required."
+            });
+        }
+
+        group.name = name.trim();
+
+        await group.save();
+
+        io.to(`group:${group._id}`).emit("groupUpdated", {
+            groupId: group._id.toString(),
+            name: group.name
+        });
+
+        res.json({
+            success: true,
+            name: group.name
+        });
+
+    } catch (error) {
+
+        console.error("Edit group error:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Unable to edit group."
+        });
+
+    }
+
+});
+
+
+// ===============================
+// ADD MEMBER
+// ===============================
+
+app.post("/group/:groupId/add-member", async (req, res) => {
+
+    try {
+
+        if (!req.session.student) {
+            return res.status(401).json({
+                success: false,
+                message: "Please login first."
+            });
+        }
+
+        const group = await Group.findById(req.params.groupId);
+
+        if (!group) {
+            return res.status(404).json({
+                success: false,
+                message: "Group not found."
+            });
+        }
+
+        const currentStudent = req.session.student;
+
+        // Only admin can add members
+        if (
+            group.createdBy.toString() !==
+            currentStudent._id.toString()
+        ) {
+            return res.status(403).json({
+                success: false,
+                message: "Only the group admin can add members."
+            });
+        }
+
+        const { studentId } = req.body;
+
+        if (!studentId) {
+            return res.status(400).json({
+                success: false,
+                message: "Student is required."
+            });
+        }
+
+        const student = await Student.findById(studentId);
+
+        if (!student) {
+            return res.status(404).json({
+                success: false,
+                message: "Student not found."
+            });
+        }
+
+        const alreadyMember = group.members.some(
+            memberId =>
+                memberId.toString() === studentId.toString()
+        );
+
+        if (alreadyMember) {
+            return res.status(400).json({
+                success: false,
+                message: "Student is already a member."
+            });
+        }
+
+        group.members.push(student._id);
+
+        await group.save();
+
+        // Create WhatsApp-style system message
+        const systemText =
+            `${currentStudent.name} added ${student.name} to the group`;
+
+        const systemMessage = await GroupMessage.create({
+
+            groupId: group._id,
+
+            sender: currentStudent._id,
+
+            senderName: currentStudent.name,
+
+            messageType: "system",
+
+            text: systemText
+
+        });
+
+        const payload = {
+
+            _id: systemMessage._id,
+
+            groupId: group._id.toString(),
+
+            sender: currentStudent._id.toString(),
+
+            senderName: currentStudent.name,
+
+            messageType: "system",
+
+            text: systemText,
+
+            createdAt: systemMessage.createdAt
+
+        };
+
+        io.to(`group:${group._id}`).emit(
+            "groupMemberChanged",
+            {
+                groupId: group._id.toString(),
+                action: "added",
+                studentId: student._id.toString(),
+                studentName: student.name,
+                memberCount: group.members.length
+            }
+        );
+
+        io.to(`group:${group._id}`).emit(
+            "newGroupMessage",
+            payload
+        );
+
+        res.json({
+            success: true,
+            message: payload,
+            memberCount: group.members.length
+        });
+
+    } catch (error) {
+
+        console.error("Add group member error:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Unable to add member."
+        });
+
+    }
+
+});
+
+
+// ===============================
+// REMOVE MEMBER
+// ===============================
+
+app.delete("/group/:groupId/member/:studentId", async (req, res) => {
+
+    try {
+
+        if (!req.session.student) {
+            return res.status(401).json({
+                success: false,
+                message: "Please login first."
+            });
+        }
+
+        const group = await Group.findById(req.params.groupId);
+
+        if (!group) {
+            return res.status(404).json({
+                success: false,
+                message: "Group not found."
+            });
+        }
+
+        const currentStudent = req.session.student;
+
+        // Only admin can remove members
+        if (
+            group.createdBy.toString() !==
+            currentStudent._id.toString()
+        ) {
+            return res.status(403).json({
+                success: false,
+                message: "Only the group admin can remove members."
+            });
+        }
+
+        const student = await Student.findById(req.params.studentId);
+
+        if (!student) {
+            return res.status(404).json({
+                success: false,
+                message: "Student not found."
+            });
+        }
+
+        // Admin cannot remove themselves
+        if (
+            student._id.toString() ===
+            group.createdBy.toString()
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: "The group admin cannot be removed."
+            });
+        }
+
+        const isMember = group.members.some(
+            memberId =>
+                memberId.toString() ===
+                student._id.toString()
+        );
+
+        if (!isMember) {
+            return res.status(400).json({
+                success: false,
+                message: "Student is not a group member."
+            });
+        }
+
+        group.members = group.members.filter(
+            memberId =>
+                memberId.toString() !==
+                student._id.toString()
+        );
+
+        await group.save();
+
+        // WhatsApp-style system message
+        const systemText =
+            `${currentStudent.name} removed ${student.name} from the group`;
+
+        const systemMessage = await GroupMessage.create({
+
+            groupId: group._id,
+
+            sender: currentStudent._id,
+
+            senderName: currentStudent.name,
+
+            messageType: "system",
+
+            text: systemText
+
+        });
+
+        const payload = {
+
+            _id: systemMessage._id,
+
+            groupId: group._id.toString(),
+
+            sender: currentStudent._id.toString(),
+
+            senderName: currentStudent.name,
+
+            messageType: "system",
+
+            text: systemText,
+
+            createdAt: systemMessage.createdAt
+
+        };
+
+        io.to(`group:${group._id}`).emit(
+            "groupMemberChanged",
+            {
+                groupId: group._id.toString(),
+                action: "removed",
+                studentId: student._id.toString(),
+                studentName: student.name,
+                memberCount: group.members.length
+            }
+        );
+
+        io.to(`group:${group._id}`).emit(
+            "newGroupMessage",
+            payload
+        );
+
+        res.json({
+            success: true,
+            message: payload,
+            memberCount: group.members.length
+        });
+
+    } catch (error) {
+
+        console.error("Remove group member error:", error);
+
+        res.status(500).json({
+            success: false,
+            message: "Unable to remove member."
+        });
+
+    }
+
+});
+
 // ================= SEND GROUP MESSAGE =================
 
 app.post("/group-messages", upload.single("image"), async (req, res) => {
@@ -2925,11 +3283,22 @@ app.get("/notifications", async (req, res) => {
 
         const currentStudentId = req.session.student._id;
 
+        const page = parseInt(req.query.page) || 1;
+        const limit = 30;
+        const skip = (page - 1) * limit;
+
+        const totalNotifications = await Notification.countDocuments({
+            recipient: currentStudentId
+        });
+
         const notifications = await Notification.find({
             recipient: currentStudentId
         })
             .sort({ updatedAt: -1 })
-            .populate("sender", "name photo");
+            .skip(skip)
+            .limit(limit)
+            .populate("sender", "name photo")
+            .lean();
 
         // Mark everything as read now that the person has opened the feed
         await Notification.updateMany(
@@ -2938,7 +3307,9 @@ app.get("/notifications", async (req, res) => {
         );
 
         res.render("notifications", {
-            notifications
+            notifications,
+            currentPage: page,
+            totalPages: Math.ceil(totalNotifications / limit)
         });
 
     } catch (error) {

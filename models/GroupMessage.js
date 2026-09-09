@@ -19,6 +19,12 @@ const groupMessageSchema = new mongoose.Schema({
         required: true
     },
 
+    messageType: {
+        type: String,
+        enum: ["text", "system"],
+        default: "text"
+    },
+
     text: {
         type: String,
         default: ""
