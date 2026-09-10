@@ -28,9 +28,22 @@
         }
 
         .inbox-page {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px 0 40px;
+            
+    width: 100%;
+    max-width: 420px;
+
+    min-height: 100vh;
+
+    margin: 0 auto;
+
+    background: #FFFFFF;
+
+    padding: 0 20px 90px;
+
+    position: relative;
+
+    overflow-x: hidden;
+
         }
 
         .page-header {
@@ -317,10 +330,11 @@
 
                 <a href="/chat/<%= chat.student._id %>" class="chat-row <%= chat.unreadCount > 0 ? 'unread' : '' %>" data-name="<%= chat.student.name.toLowerCase() %>">
 
-                    <div class="chat-avatar">
+    <div class="chat-avatar">
     <img
-        src="<%= chat.student.photo %>"
+        src="<%= chat.student.photo || '/images/default-user.png' %>"
         alt="<%= chat.student.name %>"
+        onerror="this.onerror=null; this.src='/images/default-user.jpg';"
         style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
 </div>
 
@@ -426,16 +440,13 @@
             Create group
         </a>
 
-        <a href="/student-dashboard" class="back-btn">
-            <i class="bi bi-arrow-left"></i>
-            Back to dashboard
-        </a>
-
     </div>
 
     <%- include("partials/footer") %>
+    <%- include("partials/bottom-nav") %>
 
 </div>
+
 
 <script>
 

@@ -12,6 +12,7 @@
         rel="stylesheet">
 
     <link rel="stylesheet" href="/css/student-dashboard.css">
+<link rel="stylesheet" href="/css/style.css">
 
     <style>
 
@@ -135,6 +136,9 @@
         .back-button {
             margin-top: 20px;
         }
+        .back-button2 {
+            margin-top: 20px;
+        }
 
     </style>
 </head>
@@ -158,9 +162,10 @@
         <div class="ig-avatar-wrap">
 
             <img
-                src="<%= student.photo %>"
-                class="ig-avatar"
-                alt="profile picture">
+    src="<%= student.photo || '/images/default-user.png' %>"
+    class="ig-avatar"
+    alt="profile picture"
+    onerror="this.onerror=null; this.src='/images/default-user.jpg';">
 
             <label for="photoInput" class="ig-avatar-edit">
                 <i class="bi bi-camera-fill"></i>
@@ -289,18 +294,15 @@
     </div>
 
 
-    <!-- Back Button -->
-    <a href="/student-dashboard" class="back-button">
+    <a href="/logout" class="back-button2">
         <i class="bi bi-arrow-left"></i>
-        Back to Dashboard
+        Log Out
     </a>
 
 
-    <div class="profile-footer">
-        AttendEase &bull; Smart Attendance System
-        <br>
-        Devloper-<b>Ayush Jaryal</b>
-    </div>
+
+    <%- include("partials/footer") %>
+    <%- include("partials/bottom-nav") %>
 
 </div>
 

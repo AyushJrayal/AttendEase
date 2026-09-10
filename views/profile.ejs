@@ -152,9 +152,10 @@
     <div class="ig-card">
 
         <img
-            src="<%= profileStudent.photo %>"
-            class="ig-avatar"
-            alt="profile picture">
+    src="<%= profileStudent.photo || '/images/default-user.png' %>"
+    class="ig-avatar"
+    alt="profile picture"
+    onerror="this.onerror=null; this.src='/images/default-user.jpg';">
 
         <p class="ig-name"><%= profileStudent.name %></p>
 
@@ -211,6 +212,7 @@
         <% } %>
 
     </div>
+    
 
 </div>
 

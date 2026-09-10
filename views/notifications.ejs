@@ -27,9 +27,20 @@
         }
 
         .notif-page {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px 0 40px;
+    width: 100%;
+    max-width: 420px;
+
+    min-height: 100vh;
+
+    margin: 0 auto;
+
+    background: #FFFFFF;
+
+    padding: 0 20px 90px;
+
+    position: relative;
+
+    overflow-x: hidden;
         }
 
         .page-header {
@@ -243,6 +254,8 @@
         <% } %>
 
     </div>
+    <%- include("partials/footer") %>
+    <%- include("partials/bottom-nav") %>
 
 </div>
 

@@ -391,6 +391,11 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(express.json());
 
+app.use((req, res, next) => {
+    res.locals.currentPath = req.path;
+    next();
+});
+
 app.use(session({
 
     secret: process.env.SESSION_SECRET,
@@ -1079,13 +1084,20 @@ app.post("/add-timetable", async (req, res) => {
 
 app.get("/attendance", async (req, res) => {
 
-    const students = await Student.find();
+    if (!req.session.teacher) {
+        return res.redirect("/admin-login");
+    }
 
+    const students = await Student.find();
     res.render("attendance", { students });
 
 });
 
 app.get("/attendance-history", async (req, res) => {
+
+    if (!req.session.teacher) {
+        return res.redirect("/admin-login");
+    }
 
     const page = parseInt(req.query.page) || 1;
     const limit = 50;
@@ -1109,6 +1121,9 @@ app.get("/attendance-history", async (req, res) => {
 });
 
 app.get("/reports", async (req, res) => {
+    if (!req.session.teacher) {
+        return res.redirect("/admin-login");
+    }
 
     const totalStudents = await Student.countDocuments();
 
@@ -1441,46 +1456,45 @@ app.post("/save-attendance", async (req, res) => {
 
 app.get("/add-student", (req, res) => {
 
+    if (!req.session.teacher) {
+        return res.redirect("/admin-login");
+    }
+
     res.render("add-student");
 
 });
 app.post("/add-student", async (req, res) => {
 
+    if (!req.session.teacher) {
+        return res.redirect("/admin-login");
+    }
+
     try {
-
         const student = new Student({
-
             name: req.body.name,
-
             rollNo: req.body.rollNo,
-
             semester: req.body.semester,
-
-department: req.body.department,
-
-section: req.body.section,
-
-email: req.body.email,
-
+            department: req.body.department,
+            section: req.body.section,
+            email: req.body.email,
             password: req.body.password
-
         });
 
         await student.save();
-
         res.redirect("/add-student");
 
     } catch (err) {
-
         console.log(err);
-
         res.send("Something went wrong");
-
     }
 
 });
 
+
 app.get("/students", async (req, res) => {
+    if (!req.session.teacher) {
+    return res.redirect("/admin-login");
+}
 
     const page = parseInt(req.query.page) || 1;
     const limit = 50;
@@ -1692,28 +1706,26 @@ app.get("/studentss", async (req, res) => {
 
 app.get("/edit-student/:id", async (req, res) => {
 
+    if (!req.session.teacher) {
+        return res.redirect("/admin-login");
+    }
+
     const student = await Student.findById(req.params.id);
-
-    res.render("edit-student", {
-
-        student
-
-    });
+    res.render("edit-student", { student });
 
 });
 
 app.post("/edit-student/:id", async (req, res) => {
 
+    if (!req.session.teacher) {
+        return res.redirect("/admin-login");
+    }
+
     await Student.findByIdAndUpdate(req.params.id, {
-
         name: req.body.name,
-
         rollNo: req.body.rollNo,
-
         semester: req.body.semester,
-
         department: req.body.department
-
     });
 
     res.redirect("/students");
@@ -1722,8 +1734,11 @@ app.post("/edit-student/:id", async (req, res) => {
 
 app.get("/delete-student/:id", async (req, res) => {
 
-    await Student.findByIdAndDelete(req.params.id);
+    if (!req.session.teacher) {
+        return res.redirect("/admin-login");
+    }
 
+    await Student.findByIdAndDelete(req.params.id);
     res.redirect("/students");
 
 });
@@ -3351,6 +3366,7 @@ app.delete("/notifications/:id", async (req, res) => {
     }
 
 });
+
 
 
 

@@ -2,8 +2,22 @@
 
 .bottom-nav a {
     position: relative;
+    color: #777;
+    text-decoration: none;
+    transition: 0.2s ease;
 }
 
+/* Active button */
+.bottom-nav a.active {
+    color: #0B5D3B;
+}
+
+/* Active icon */
+.bottom-nav a.active i {
+    color: #0B5D3B;
+}
+
+/* Badge */
 .nav-badge {
     position: absolute;
     top: -4px;
@@ -23,9 +37,15 @@
 
 </style>
 
+
 <div class="bottom-nav">
 
-    <a href="/student-dashboard" class="active">
+    <!-- HOME -->
+
+    <a
+        href="/student-dashboard"
+        class="<%= currentPath === '/student-dashboard' ? 'active' : '' %>"
+    >
 
         <i class="bi bi-house-fill"></i>
 
@@ -33,37 +53,65 @@
 
     </a>
 
-    <a href="/student-attendance">
 
-        <i class="bi bi-calendar-check"></i>
+    <!-- ATTENDANCE -->
+
+    <a
+        href="/student-attendance"
+        class="<%= currentPath === '/student-attendance' ? 'active' : '' %>"
+    >
+
+        <i class="bi bi-book-fill"></i>
 
         <p>Attendance</p>
 
     </a>
 
-    <a href="/inbox">
 
-        <i class="bi bi-send"></i>
+    <!-- MESSAGES -->
+
+    <a
+        href="/inbox"
+        class="<%= currentPath === '/inbox' ? 'active' : '' %>"
+    >
+
+        <i class="bi bi-send-fill"></i>
 
         <p>Message</p>
 
     </a>
 
-    <a href="/notifications">
+
+    <!-- ALERTS -->
+
+    <a
+        href="/notifications"
+        class="<%= currentPath === '/notifications' ? 'active' : '' %>"
+    >
 
         <i class="bi bi-bell-fill"></i>
 
         <% if (unreadNotifCount > 0) { %>
-            <span class="nav-badge"><%= unreadNotifCount %></span>
+
+            <span class="nav-badge">
+                <%= unreadNotifCount %>
+            </span>
+
         <% } %>
 
         <p>Alerts</p>
 
     </a>
 
-    <a href="/student-profile">
 
-        <i class="bi bi-person"></i>
+    <!-- PROFILE -->
+
+    <a
+        href="/student-profile"
+        class="<%= currentPath === '/student-profile' ? 'active' : '' %>"
+    >
+
+        <i class="bi bi-person-circle"></i>
 
         <p>Profile</p>
 

@@ -51,14 +51,14 @@
         </a>
 
 
-        <div class="avatar">
-
+       <div class="avatar">
     <img
-        src="<%= otherStudent.photo %>"
+        src="<%= otherStudent.photo || '/images/default-user.png' %>"
         alt="<%= otherStudent.name %>"
+        onerror="this.onerror=null; this.src='/images/default-user.jpg';"
         style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">
-
 </div>
+
 
 
         <div class="student-info">
