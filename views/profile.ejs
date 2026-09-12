@@ -166,6 +166,14 @@
         <p class="ig-subtitle">
             Semester <%= profileStudent.semester %> &bull; Section <%= profileStudent.section %>
         </p>
+        
+        <p class="ig-subtitle">
+            <% if (isProfileOnline) { %>
+                <span style="color: #0E6B3F; font-weight: 600;">Online now</span>
+            <% } else if (profileStudent.lastActive) { %>
+                Active <span data-timestamp="<%= profileStudent.lastActive.toISOString() %>" class="last-active-display"></span>
+            <% } %>
+        </p>
 
         <div class="ig-stats">
 
@@ -215,6 +223,36 @@
     
 
 </div>
+
+<script>
+
+function relativeLastActive(isoString) {
+
+    const then = new Date(isoString);
+    const now = new Date();
+
+    const seconds = Math.floor((now - then) / 1000);
+
+    if (seconds < 60) return "just now";
+
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return minutes + "m ago";
+
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return hours + "h ago";
+
+    const days = Math.floor(hours / 24);
+    if (days < 7) return days + "d ago";
+
+    return then.toLocaleDateString();
+
+}
+
+document.querySelectorAll(".last-active-display").forEach(el => {
+    el.textContent = relativeLastActive(el.dataset.timestamp);
+});
+
+</script>
 
 </body>
 </html>

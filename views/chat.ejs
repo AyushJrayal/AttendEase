@@ -318,6 +318,19 @@ const currentStudentId =
 
 const socket = io();
 
+socket.on("connect", () => {
+
+    socket.emit("studentJoin", {
+        _id: currentStudentId
+    });
+
+    socket.emit("markMessagesRead", {
+        studentId: currentStudentId,
+        otherStudentId: receiverId
+    });
+
+});
+
 const onlineStatus =
     document.getElementById("onlineStatus");
 
@@ -386,13 +399,6 @@ socket.on("userStoppedTyping", (data) => {
         scrollToBottom();
     }
 });
-
-// Mark all existing messages from this student as read
-socket.emit("markMessagesRead", {
-    studentId: currentStudentId,
-    otherStudentId: receiverId
-});
-
 
 
 
@@ -482,12 +488,7 @@ socket.emit("messageDelivered", {
 
 
 
-// Tell server which student is connected
-socket.emit("studentJoin", {
 
-    _id: currentStudentId
-
-});
 
 // ===============================
 // MESSAGE DELIVERED

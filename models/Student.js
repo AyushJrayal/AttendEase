@@ -52,7 +52,10 @@ department: {
     type: String,
     default: "/images/default-user.png"
 },
-
+lastActive: {
+    type: Date,
+    default: null
+},
     state: {
         type: String,
         required: true

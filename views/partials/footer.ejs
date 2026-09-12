@@ -15,3 +15,19 @@
     🌐 Jaryal.shop
 
 </div>
+<% if (loggedInStudentId) { %>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(function () {
+
+    const presenceSocket = io();
+
+    presenceSocket.on("connect", () => {
+        presenceSocket.emit("studentJoin", {
+            _id: "<%= loggedInStudentId %>"
+        });
+    });
+
+})();
+</script>
+<% } %>

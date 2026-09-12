@@ -139,6 +139,8 @@ io.on("connection", (socket) => {
 // Save student as online
 onlineStudents.set(studentId, socket.id);
 
+    await Student.findByIdAndUpdate(studentId, { lastActive: new Date() });
+
 // Join personal room
 socket.join(`student:${studentId}`);
 
@@ -229,33 +231,39 @@ console.log(`Student joined personal room: student:${studentId}`);
 
     });
 
-    // ===============================
-// MARK MESSAGES AS READ
-// ===============================
-
 socket.on("markMessagesRead", async (data) => {
     try {
         if (!data || !data.studentId || !data.otherStudentId) {
             return;
         }
 
+        // Find which messages are about to become "read" so we can tell the sender exactly which ones
+        const messagesToMark = await Message.find({
+            sender: data.otherStudentId,
+            receiver: data.studentId,
+            status: { $ne: "read" }
+        }).select("_id");
+
+        if (messagesToMark.length === 0) {
+            return;
+        }
+
+        const messageIds = messagesToMark.map(msg => msg._id.toString());
+
         await Message.updateMany(
-            {
-                sender: data.otherStudentId,
-                receiver: data.studentId,
-                status: { $ne: "read" }
-            },
-            {
-                $set: {
-                    status: "read"
-                }
-            }
+            { _id: { $in: messageIds } },
+            { $set: { status: "read" } }
         );
-                await Notification.updateMany(
+
+        await Notification.updateMany(
             { recipient: data.studentId, sender: data.otherStudentId, type: "message" },
             { read: true, count: 0 }
         );
-        
+
+        // Tell the SENDER's browser, in real time, exactly which messages were just read
+        io.to(`student:${data.otherStudentId}`).emit("messagesRead", {
+            messageIds
+        });
 
         console.log(
             `Messages marked as read: ${data.otherStudentId} -> ${data.studentId}`
@@ -340,7 +348,7 @@ socket.on("stopTyping", (data) => {
     // STUDENT DISCONNECT
     // ===============================
 
-    socket.on("disconnect", () => {
+    socket.on("disconnect", async () => {
 
         console.log(
             "User disconnected:",
@@ -357,9 +365,14 @@ socket.on("stopTyping", (data) => {
 
                 onlineStudents.delete(studentId);
 
-                // Tell everyone this student went offline
+                const now = new Date();
+
+                await Student.findByIdAndUpdate(studentId, { lastActive: now });
+
+                // Tell everyone this student went offline, and when they were last active
                 io.emit("studentOffline", {
-                    studentId: studentId
+                    studentId: studentId,
+                    lastActive: now
                 });
 
                 console.log(
@@ -429,8 +442,11 @@ app.use(session({
 app.use(async (req, res, next) => {
 
     res.locals.unreadNotifCount = 0;
+    res.locals.loggedInStudentId = null;
 
     if (req.session.student) {
+
+        res.locals.loggedInStudentId = req.session.student._id.toString();
 
         try {
 
@@ -448,7 +464,6 @@ app.use(async (req, res, next) => {
     next();
 
 });
-
 app.set("view engine", "ejs");
 
 app.use(express.static("public"));
@@ -2139,24 +2154,32 @@ app.get("/chat/:studentId", async (req, res) => {
         const currentStudent = req.session.student;
         const otherStudentId = req.params.studentId;
 
-        // Mark messages from this student as read
-        await Message.updateMany(
-            {
-                sender: otherStudentId,
-                receiver: currentStudent._id,
-                status: { $ne: "read" }
-            },
-            
-            {
-                $set: {
-                    status: "read"
-                }
-            }
-        );
-                await Notification.updateMany(
-            { recipient: currentStudent._id, sender: otherStudentId, type: "message" },
-            { read: true, count: 0 }
-        );
+               // Find which messages are about to become read, so we can notify the sender live
+        const unreadMessages = await Message.find({
+            sender: otherStudentId,
+            receiver: currentStudent._id,
+            status: { $ne: "read" }
+        }).select("_id");
+
+        if (unreadMessages.length > 0) {
+
+            const messageIds = unreadMessages.map(msg => msg._id.toString());
+
+            await Message.updateMany(
+                { _id: { $in: messageIds } },
+                { $set: { status: "read" } }
+            );
+
+            await Notification.updateMany(
+                { recipient: currentStudent._id, sender: otherStudentId, type: "message" },
+                { read: true, count: 0 }
+            );
+
+            io.to(`student:${otherStudentId}`).emit("messagesRead", {
+                messageIds
+            });
+
+        }
 
         // Don't allow messaging yourself
         if (currentStudent._id.toString() === otherStudentId) {
@@ -3175,6 +3198,7 @@ app.get("/profile/:studentId", async (req, res) => {
         const profileStudentId = req.params.studentId;
 
         const profileStudent = await Student.findById(profileStudentId);
+        const isProfileOnline = onlineStudents.has(profileStudentId);
 
         if (!profileStudent) {
             return res.status(404).send("Student not found.");
@@ -3196,13 +3220,14 @@ app.get("/profile/:studentId", async (req, res) => {
         const isOwnProfile =
             currentStudentId.toString() === profileStudentId;
 
-        res.render("profile", {
+                res.render("profile", {
 
             profileStudent,
             followersCount,
             followingCount,
             isFollowing: !!existingFollow,
-            isOwnProfile
+            isOwnProfile,
+            isProfileOnline
 
         });
 
