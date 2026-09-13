@@ -12,6 +12,12 @@ const followSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Student",
         required: true
+    },
+
+    status: {
+        type: String,
+        enum: ["pending", "accepted"],
+        default: "accepted"
     }
 
 }, { timestamps: true });

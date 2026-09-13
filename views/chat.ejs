@@ -238,6 +238,38 @@
         <i class="bi bi-x-lg"></i>
     </button>
 </div>
+    <% if (!canMessage) { %>
+    <div class="follow-required-banner">
+        <p>Follow <%= otherStudent.name %> to send them a message.</p>
+        <form action="/follow/<%= otherStudent._id %>" method="POST">
+            <button type="submit" class="follow-now-btn">Follow</button>
+        </form>
+    </div>
+    <% } %>
+
+    <style>
+        .follow-required-banner {
+            background: #fff3cd;
+            border-top: 1px solid #ffe69c;
+            padding: 12px 16px;
+            text-align: center;
+        }
+        .follow-required-banner p {
+            margin: 0 0 8px;
+            font-size: 14px;
+            color: #664d03;
+        }
+        .follow-now-btn {
+            background: #0095F6;
+            color: white;
+            border: none;
+            padding: 8px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+        }
+    </style>
+
 
 
 
@@ -260,13 +292,15 @@
     <input
         type="text"
         id="messageInput"
-        placeholder="Type a message..."
+        placeholder="<%= canMessage ? 'Type a message...' : 'Follow to message' %>"
         autocomplete="off"
-        maxlength="1000">
+        maxlength="1000"
+        <% if (!canMessage) { %>disabled<% } %>>
 
     <button
         type="submit"
-        class="send-btn">
+        class="send-btn"
+        <% if (!canMessage) { %>disabled<% } %>>
 
         <i class="bi bi-send-fill"></i>
 
@@ -308,6 +342,8 @@ const receiverId =
 
 const currentStudentId =
     "<%= currentStudent._id %>";
+
+const canMessage = <%= canMessage ? "true" : "false" %>;
 
     
 
@@ -694,6 +730,10 @@ function addMessage(message, type, pending = false) {
 chatForm.addEventListener("submit", async (e) => {
 
     e.preventDefault();
+
+    if (!canMessage) {
+        return;
+    }
 
     const message = messageInput.value.trim();
 

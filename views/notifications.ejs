@@ -173,6 +173,31 @@
             display: block;
             margin-bottom: 10px;
         }
+                .notif-request-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 6px;
+        }
+
+        .notif-accept-btn,
+        .notif-decline-btn {
+            padding: 6px 16px;
+            border-radius: 6px;
+            border: none;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .notif-accept-btn {
+            background: #0095F6;
+            color: white;
+        }
+
+        .notif-decline-btn {
+            background: #efefef;
+            color: #262626;
+        }
 
     </style>
 
@@ -201,20 +226,27 @@
                 <%
                     let href = "#";
                     let text = "";
+                    let iconClass = "bi-person-plus-fill";
 
                     if (notif.type === "follow") {
                         href = "/profile/" + notif.sender._id;
                         text = "started following you.";
+                    } else if (notif.type === "follow_request") {
+                        href = "/profile/" + notif.sender._id;
+                        text = "requested to follow you.";
+                    } else if (notif.type === "follow_accepted") {
+                        href = "/profile/" + notif.sender._id;
+                        text = "accepted your follow request.";
                     } else if (notif.type === "message") {
                         href = "/chat/" + notif.sender._id;
                         text = notif.count > 1
                             ? "sent you " + notif.count + " messages."
                             : "sent you a message.";
+                        iconClass = "bi-chat-fill";
                     }
                 %>
 
-                
-                                                    <div class="notif-row-wrap" data-notif-id="<%= notif._id %>">
+                <div class="notif-row-wrap" data-notif-id="<%= notif._id %>">
 
                     <a href="<%= href %>" class="notif-row <%= notif.read ? '' : 'unread' %>">
 
@@ -225,13 +257,25 @@
                                 alt="<%= notif.sender.name %>"
                                 class="notif-avatar">
 
-                            <i class="bi <%= notif.type === 'follow' ? 'bi-person-plus-fill' : 'bi-chat-fill' %>"></i>
+                            <i class="bi <%= iconClass %>"></i>
 
                         </div>
 
                         <div class="notif-text">
                             <b><%= notif.sender.name %></b> <%= text %>
                             <span class="notif-time" data-timestamp="<%= notif.updatedAt.toISOString() %>"></span>
+
+                            <% if (notif.type === "follow_request") { %>
+                            <div class="notif-request-actions">
+                                <form action="/follow-request/<%= notif.sender._id %>/accept" method="POST">
+                                    <button type="submit" class="notif-accept-btn">Accept</button>
+                                </form>
+                                <form action="/follow-request/<%= notif.sender._id %>/decline" method="POST">
+                                    <button type="submit" class="notif-decline-btn">Decline</button>
+                                </form>
+                            </div>
+                            <% } %>
+
                         </div>
 
                     </a>
@@ -322,6 +366,12 @@ document.querySelectorAll(".notif-delete-btn").forEach(btn => {
 
     });
 
+});
+
+document.querySelectorAll(".notif-request-actions form").forEach(form => {
+    form.addEventListener("click", (e) => {
+        e.stopPropagation();
+    });
 });
 
 </script>

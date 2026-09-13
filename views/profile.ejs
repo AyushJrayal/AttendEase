@@ -193,11 +193,19 @@
 
             <div class="ig-action-row">
 
-                <% if (isFollowing) { %>
+                <% if (followStatus === "accepted") { %>
 
                     <form action="/unfollow/<%= profileStudent._id %>" method="POST" style="flex:1;">
                         <button type="submit" class="ig-follow-btn unfollow" style="width:100%;">
                             Following
+                        </button>
+                    </form>
+
+                <% } else if (followStatus === "pending") { %>
+
+                    <form action="/unfollow/<%= profileStudent._id %>" method="POST" style="flex:1;">
+                        <button type="submit" class="ig-follow-btn unfollow" style="width:100%;">
+                            Requested
                         </button>
                     </form>
 

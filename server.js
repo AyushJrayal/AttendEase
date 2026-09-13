@@ -55,8 +55,17 @@ const compression = require("compression");
 
 const onlineStudents = new Map();
 
+const PushSubscription = require("./models/PushSubscription");
+
 const { CloudinaryStorage } = require("multer-storage-cloudinary");
 const cloudinary = require("./config/cloudinary");
+
+const webpush = require("web-push");
+webpush.setVapidDetails(
+    "mailto:you@tonistarktonistark61@gmail.com",
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+);
 
 const storage = new CloudinaryStorage({
     cloudinary: cloudinary,
@@ -443,6 +452,7 @@ app.use(async (req, res, next) => {
 
     res.locals.unreadNotifCount = 0;
     res.locals.loggedInStudentId = null;
+    res.locals.vapidPublicKey = process.env.VAPID_PUBLIC_KEY;
 
     if (req.session.student) {
 
@@ -1882,6 +1892,20 @@ app.post("/messages", upload.single("image"), async (req, res) => {
             });
         }
 
+        const isFollowing = await Follow.findOne({
+            follower: sender,
+            following: receiver,
+            status: "accepted"
+        });
+
+        if (!isFollowing) {
+            return res.status(403).json({
+                success: false,
+                message: "You need to follow this person before you can message them.",
+                notFollowing: true
+            });
+        }
+
         // ===============================
         // CHECK MESSAGE / IMAGE
         // ===============================
@@ -1984,6 +2008,13 @@ app.post("/messages", upload.single("image"), async (req, res) => {
         io.to(`student:${sender}`).emit(
             "messageSent",
             payload
+        );
+
+                sendPushToStudent(
+            receiver,
+            req.session.student.name,
+            newMessage.mediaType === "image" ? "Sent you a photo" : newMessage.message,
+            `/chat/${sender}`
         );
 
         // ===============================
@@ -2193,6 +2224,14 @@ app.get("/chat/:studentId", async (req, res) => {
             return res.status(404).send("Student not found.");
         }
 
+        const isFollowing = await Follow.findOne({
+            follower: currentStudent._id,
+            following: otherStudent._id,
+            status: "accepted"
+        });
+
+        const canMessage = !!isFollowing;
+
         // Get previous conversation
         const messages = await Message.find({
 
@@ -2214,11 +2253,12 @@ app.get("/chat/:studentId", async (req, res) => {
             .sort({ createdAt: 1 })
             .populate("replyTo", "message sender mediaUrl mediaType deleted");
 
-        res.render("chat", {
+               res.render("chat", {
 
             currentStudent,
             otherStudent,
-            messages
+            messages,
+            canMessage
 
         });
 
@@ -3205,17 +3245,21 @@ app.get("/profile/:studentId", async (req, res) => {
         }
 
         const followersCount = await Follow.countDocuments({
-            following: profileStudentId
+            following: profileStudentId,
+            status: "accepted"
         });
 
         const followingCount = await Follow.countDocuments({
-            follower: profileStudentId
+            follower: profileStudentId,
+            status: "accepted"
         });
 
         const existingFollow = await Follow.findOne({
             follower: currentStudentId,
             following: profileStudentId
         });
+
+        const followStatus = existingFollow ? existingFollow.status : "none";
 
         const isOwnProfile =
             currentStudentId.toString() === profileStudentId;
@@ -3225,7 +3269,7 @@ app.get("/profile/:studentId", async (req, res) => {
             profileStudent,
             followersCount,
             followingCount,
-            isFollowing: !!existingFollow,
+            followStatus,
             isOwnProfile,
             isProfileOnline
 
@@ -3263,16 +3307,26 @@ app.post("/follow/:studentId", async (req, res) => {
         });
 
         if (!existingFollow) {
+
             await Follow.create({
                 follower: followerId,
-                following: followingId
+                following: followingId,
+                status: "pending"
             });
 
-                    await Notification.findOneAndUpdate(
-            { recipient: followingId, sender: followerId, type: "follow" },
-            { read: false },
-            { upsert: true, new: true }
-        );
+            await Notification.findOneAndUpdate(
+                { recipient: followingId, sender: followerId, type: "follow_request" },
+                { read: false },
+                { upsert: true, new: true }
+            );
+
+                        sendPushToStudent(
+                followingId,
+                "New follow request",
+                `${req.session.student.name} wants to follow you`,
+                `/profile/${followerId}`
+            );
+
         }
 
         res.redirect("/profile/" + followingId);
@@ -3280,7 +3334,95 @@ app.post("/follow/:studentId", async (req, res) => {
     } catch (error) {
 
         console.error("Follow error:", error);
-        res.status(500).send("Unable to follow student.");
+        res.status(500).send("Unable to send follow request.");
+
+    }
+
+});
+
+app.post("/follow-request/:studentId/accept", async (req, res) => {
+
+    try {
+
+        if (!req.session.student) {
+            return res.redirect("/login");
+        }
+
+        const currentStudentId = req.session.student._id;
+        const requesterId = req.params.studentId;
+
+        const followRequest = await Follow.findOne({
+            follower: requesterId,
+            following: currentStudentId,
+            status: "pending"
+        });
+
+        if (followRequest) {
+
+            followRequest.status = "accepted";
+            await followRequest.save();
+
+            await Notification.deleteMany({
+                recipient: currentStudentId,
+                sender: requesterId,
+                type: "follow_request"
+            });
+
+            await Notification.findOneAndUpdate(
+                { recipient: requesterId, sender: currentStudentId, type: "follow_accepted" },
+                { read: false },
+                { upsert: true, new: true }
+            );
+
+                        sendPushToStudent(
+                requesterId,
+                "Follow request accepted",
+                `${req.session.student.name} accepted your follow request`,
+                `/profile/${currentStudentId}`
+            );
+
+        }
+
+        res.redirect(req.get("Referer") || "/notifications");
+
+    } catch (error) {
+
+        console.error("Accept follow request error:", error);
+        res.status(500).send("Unable to accept follow request.");
+
+    }
+
+});
+
+app.post("/follow-request/:studentId/decline", async (req, res) => {
+
+    try {
+
+        if (!req.session.student) {
+            return res.redirect("/login");
+        }
+
+        const currentStudentId = req.session.student._id;
+        const requesterId = req.params.studentId;
+
+        await Follow.deleteOne({
+            follower: requesterId,
+            following: currentStudentId,
+            status: "pending"
+        });
+
+        await Notification.deleteMany({
+            recipient: currentStudentId,
+            sender: requesterId,
+            type: "follow_request"
+        });
+
+        res.redirect(req.get("Referer") || "/notifications");
+
+    } catch (error) {
+
+        console.error("Decline follow request error:", error);
+        res.status(500).send("Unable to decline follow request.");
 
     }
 
@@ -3392,12 +3534,97 @@ app.delete("/notifications/:id", async (req, res) => {
 
 });
 
+app.post("/save-subscription", async (req, res) => {
+
+    try {
+
+        if (!req.session.student) {
+            return res.status(401).json({ success: false, message: "Please login first." });
+        }
+
+        const { endpoint, keys } = req.body;
+
+        if (!endpoint || !keys || !keys.p256dh || !keys.auth) {
+            return res.status(400).json({ success: false, message: "Invalid subscription." });
+        }
+
+        await PushSubscription.findOneAndUpdate(
+            { endpoint },
+            {
+                student: req.session.student._id,
+                endpoint,
+                keys
+            },
+            { upsert: true, new: true }
+        );
+
+        res.json({ success: true });
+
+    } catch (error) {
+
+        console.error("Save subscription error:", error);
+        res.status(500).json({ success: false, message: "Unable to save subscription." });
+
+    }
+
+});
+
+async function sendPushToStudent(studentId, title, body, url) {
+
+    try {
+
+        const subscriptions = await PushSubscription.find({ student: studentId });
+
+        const payload = JSON.stringify({ title, body, url });
+
+        for (const sub of subscriptions) {
+
+            const pushConfig = {
+                endpoint: sub.endpoint,
+                keys: {
+                    p256dh: sub.keys.p256dh,
+                    auth: sub.keys.auth
+                }
+            };
+
+            try {
+                await webpush.sendNotification(pushConfig, payload);
+            } catch (error) {
+
+                // If the subscription is dead (expired/unsubscribed), remove it
+                if (error.statusCode === 410 || error.statusCode === 404) {
+                    await PushSubscription.deleteOne({ _id: sub._id });
+                } else {
+                    console.error("Push send error:", error.message);
+                }
+
+            }
+
+        }
+
+    } catch (error) {
+        console.error("sendPushToStudent error:", error);
+    }
+
+}
+
 
 
 
 
 
 connectDB();
+
+Follow.updateMany(
+    { status: { $exists: false } },
+    { $set: { status: "accepted" } }
+)
+    .then(result => {
+        console.log("Follow status backfill complete:", result.modifiedCount, "records updated");
+    })
+    .catch(error => {
+        console.error("Follow status backfill error:", error);
+    });
 
 app.get("/logout", (req, res) => {
 

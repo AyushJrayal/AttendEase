@@ -31,3 +31,95 @@
 })();
 </script>
 <% } %>
+
+<% if (loggedInStudentId) { %>
+<div id="enableNotifBtn" style="
+    display: none;
+    position: fixed;
+    bottom: 90px;
+    right: 16px;
+    background: #0E6B3F;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 30px;
+    font-size: 13px;
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0,0,0,.2);
+    cursor: pointer;
+    z-index: 999;
+">
+    🔔 Enable Notifications
+</div>
+
+<script>
+(function () {
+
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+        console.log("Push notifications not supported in this browser.");
+        return;
+    }
+
+    const enableBtn = document.getElementById("enableNotifBtn");
+
+    if (Notification.permission === "default") {
+        enableBtn.style.display = "block";
+    }
+
+    function urlBase64ToUint8Array(base64String) {
+        const padding = "=".repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    }
+
+    async function setupPush() {
+
+        try {
+
+            const registration = await navigator.serviceWorker.register("/sw.js");
+
+            const permission = await Notification.requestPermission();
+
+            if (permission !== "granted") {
+                console.log("Notification permission not granted:", permission);
+                return;
+            }
+
+            enableBtn.style.display = "none";
+
+            let subscription = await registration.pushManager.getSubscription();
+
+            if (!subscription) {
+                subscription = await registration.pushManager.subscribe({
+                    userVisibleOnly: true,
+                    applicationServerKey: urlBase64ToUint8Array("<%= vapidPublicKey %>")
+                });
+            }
+
+            await fetch("/save-subscription", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(subscription)
+            });
+
+            console.log("Push subscription saved.");
+
+        } catch (error) {
+            console.error("Push setup error:", error);
+        }
+
+    }
+
+    if (Notification.permission === "granted") {
+        setupPush();
+    }
+
+    enableBtn.addEventListener("click", setupPush);
+
+})();
+</script>
+<% } %>
