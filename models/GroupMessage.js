@@ -35,6 +35,16 @@ const groupMessageSchema = new mongoose.Schema({
         default: ""
     },
 
+    pdfUrl: {
+    type: String,
+    default: ""
+    },
+
+    pdfName: {
+    type: String,
+    default: ""
+    },
+
     voiceUrl: {
         type: String,
         default: ""

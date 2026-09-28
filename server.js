@@ -111,6 +111,28 @@ const uploadProfilePhoto = multer({
     limits: { fileSize: 5 * 1024 * 1024 }
 });
 
+const pdfStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: "attendease-group-pdfs",
+        resource_type: "raw",
+        public_id: (req, file) =>
+            Date.now() + "-" + file.originalname.replace(/[^a-zA-Z0-9.\-_]/g, "_")
+    }
+});
+
+const uploadPdf = multer({
+    storage: pdfStorage,
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype === "application/pdf") {
+            cb(null, true);
+        } else {
+            cb(new Error("Only PDF files are allowed."));
+        }
+    }
+});
+
 
 io.on("connection", (socket) => {
 
@@ -3185,6 +3207,175 @@ app.post("/group-messages", upload.single("image"), async (req, res) => {
             success: false,
             message: "Unable to send message."
         });
+
+    }
+
+});
+
+// ================= SEND PDF TO GROUP =================
+
+app.post("/group-messages/pdf", (req, res, next) => {
+
+    uploadPdf.single("pdf")(req, res, (err) => {
+        if (err) {
+            return res.status(400).json({ success: false, message: err.message });
+        }
+        next();
+    });
+
+}, async (req, res) => {
+
+    try {
+
+        if (!req.session.student) {
+            return res.status(401).json({ success: false, message: "Please login first." });
+        }
+
+        const { groupId } = req.body;
+
+        if (!groupId || !req.file) {
+            return res.status(400).json({ success: false, message: "Group and PDF are required." });
+        }
+
+        const group = await Group.findById(groupId);
+
+        if (!group) {
+            return res.status(404).json({ success: false, message: "Group not found." });
+        }
+
+        const sender = req.session.student._id;
+
+        const isMember = group.members.some(
+            memberId => memberId.toString() === sender.toString()
+        );
+
+        if (!isMember) {
+            return res.status(403).json({ success: false, message: "You are not a member of this group." });
+        }
+
+        const newMessage = await GroupMessage.create({
+            groupId,
+            sender,
+            senderName: req.session.student.name,
+            text: "",
+            pdfUrl: req.file.path,
+            pdfName: req.file.originalname,
+            status: "sent"
+        });
+
+        // IMPORTANT: never send pdfUrl to the browser, only the message id and file name
+        const payload = {
+            _id: newMessage._id,
+            groupId: groupId.toString(),
+            sender: sender.toString(),
+            senderName: req.session.student.name,
+            text: "",
+            imageUrl: "",
+            hasPdf: true,
+            pdfName: newMessage.pdfName,
+            createdAt: newMessage.createdAt
+        };
+
+        io.to(`group:${groupId}`).emit("newGroupMessage", payload);
+
+        res.json({ success: true, message: payload });
+
+    } catch (error) {
+
+        console.error("Send group PDF error:", error);
+        res.status(500).json({ success: false, message: "Unable to send PDF." });
+
+    }
+
+});
+
+// ================= STREAM PDF (members only, view only) =================
+
+app.get("/group-pdf/:messageId", async (req, res) => {
+
+    try {
+
+        if (!req.session.student) {
+            return res.status(401).send("Please login first.");
+        }
+
+        const msg = await GroupMessage.findById(req.params.messageId);
+
+        if (!msg || !msg.pdfUrl) {
+            return res.status(404).send("PDF not found.");
+        }
+
+        const group = await Group.findById(msg.groupId);
+
+        const isMember = group && group.members.some(
+            memberId => memberId.toString() === req.session.student._id.toString()
+        );
+
+        if (!isMember) {
+            return res.status(403).send("You are not a member of this group.");
+        }
+
+        const upstream = await fetch(msg.pdfUrl);
+
+                if (!upstream.ok) {
+            console.error("PDF fetch failed. Status:", upstream.status, "URL:", msg.pdfUrl);
+            return res.status(502).send("Unable to load PDF.");
+        }
+
+        const buffer = Buffer.from(await upstream.arrayBuffer());
+
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", "inline");
+        res.setHeader("Cache-Control", "private, no-store");
+
+        res.send(buffer);
+
+    } catch (error) {
+
+        console.error("Stream PDF error:", error);
+        res.status(500).send("Unable to load PDF.");
+
+    }
+
+});
+
+// ================= PDF VIEWER PAGE =================
+
+app.get("/pdf-viewer/:messageId", async (req, res) => {
+
+    try {
+
+        if (!req.session.student) {
+            return res.redirect("/login");
+        }
+
+        const msg = await GroupMessage.findById(req.params.messageId);
+
+        if (!msg || !msg.pdfUrl) {
+            return res.status(404).send("PDF not found.");
+        }
+
+        const group = await Group.findById(msg.groupId);
+
+        const isMember = group && group.members.some(
+            memberId => memberId.toString() === req.session.student._id.toString()
+        );
+
+        if (!isMember) {
+            return res.status(403).send("You are not a member of this group.");
+        }
+
+        res.render("pdf-viewer", {
+            messageId: msg._id.toString(),
+            pdfName: msg.pdfName,
+            groupId: msg.groupId.toString(),
+            viewerName: req.session.student.name
+        });
+
+    } catch (error) {
+
+        console.error("PDF viewer error:", error);
+        res.status(500).send("Unable to open PDF.");
 
     }
 

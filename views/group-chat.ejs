@@ -22,23 +22,138 @@
     <link rel="stylesheet" href="/css/chat.css">
 
     <script src="/socket.io/socket.io.js"></script>
+
     <style>
+
         .group-system-message {
-    display: flex;
-    justify-content: center;
-    margin: 12px 15px;
+            display: flex;
+            justify-content: center;
+            margin: 12px 15px;
+        }
+
+        .group-system-message span {
+            background: #eef2f0;
+            color: #6f7773;
+            font-size: 12px;
+            padding: 6px 12px;
+            border-radius: 12px;
+            text-align: center;
+            max-width: 85%;
+        }
+
+        .group-info-btn {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            color: white;
+            font-size: 20px;
+            transition: 0.2s;
+        }
+
+        .group-info-btn:hover {
+            background: #0E6B3F;
+        }
+
+        .group-sender-name {
+            display: block;
+            font-size: 12px;
+            font-weight: 700;
+            color: #0E6B3F;
+            margin-bottom: 3px;
+        }
+
+        .pdf-card {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            min-width: 200px;
+            max-width: 260px;
+            background: rgba(0,0,0,0.06);
+            border-radius: 10px;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .pdf-card > i {
+            font-size: 30px;
+            color: #d92d20;
+            flex-shrink: 0;
+        }
+
+        .pdf-card-info {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .pdf-card-name {
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .pdf-card-hint {
+            font-size: 11px;
+            opacity: .7;
+        }
+
+        .pdf-preview-bar {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 14px;
+            background: #fff;
+            border-top: 1px solid #e5e7eb;
+            font-size: 13px;
+        }
+
+        .pdf-preview-bar i.pdf-icon {
+            color: #d92d20;
+            font-size: 22px;
+        }
+
+        .pdf-preview-bar .pdf-preview-name {
+            flex: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .pdf-preview-bar button {
+            border: none;
+            background: transparent;
+            color: #666;
+            font-size: 16px;
+        }
+        .message.sending .pdf-card {
+    opacity: .65;
+    pointer-events: none;
 }
 
-.group-system-message span {
-    background: #eef2f0;
-    color: #6f7773;
-    font-size: 12px;
-    padding: 6px 12px;
-    border-radius: 12px;
-    text-align: center;
-    max-width: 85%;
+.pdf-spinner {
+    width: 18px;
+    height: 18px;
+    margin-left: auto;
+    flex-shrink: 0;
+    border: 2px solid rgba(0,0,0,0.15);
+    border-top-color: #0E6B3F;
+    border-radius: 50%;
+    animation: pdfSpin .8s linear infinite;
 }
+
+@keyframes pdfSpin {
+    to { transform: rotate(360deg); }
+}
+
     </style>
+
 </head>
 
 <body>
@@ -58,18 +173,20 @@
         </div>
 
         <div class="student-info">
-    <h5>
-        <%= group.name %>
-    </h5>
 
-    <small class="offline-status">
-        <%= group.members.length %> members
-    </small>
-</div>
+            <h5>
+                <%= group.name %>
+            </h5>
 
-<a href="/group-info/<%= group._id %>" class="group-info-btn">
-    <i class="bi bi-info-circle"></i>
-</a>
+            <small class="offline-status">
+                <%= group.members.length %> members
+            </small>
+
+        </div>
+
+        <a href="/group-info/<%= group._id %>" class="group-info-btn">
+            <i class="bi bi-info-circle"></i>
+        </a>
 
     </div>
 
@@ -118,54 +235,56 @@
 
             <% if (msg.messageType === "system") { %>
 
-    <div
-        class="group-system-message"
-        data-message-id="<%= msg._id %>"
-    >
-        <span>
-            <%= msg.text %>
-        </span>
-    </div>
+                <div class="group-system-message" data-message-id="<%= msg._id %>">
+                    <span><%= msg.text %></span>
+                </div>
 
-<% } else { %>
-            <%
-                const isSent = msg.sender.toString() === currentStudent._id.toString();
-            %>
+            <% } else { %>
 
-            <div
-                class="message <%= isSent ? 'sent' : 'received' %> <%= msg.imageUrl ? 'has-media' : '' %>"
-                data-message-id="<%= msg._id %>"
-                data-sender="<%= msg.sender %>"
-            >
+                <% const isSent = msg.sender.toString() === currentStudent._id.toString(); %>
 
-                <% if (!isSent) { %>
-                    <span class="group-sender-name"><%= msg.senderName %></span>
-                <% } %>
+                <div
+                    class="message <%= isSent ? 'sent' : 'received' %> <%= msg.imageUrl ? 'has-media' : '' %>"
+                    data-message-id="<%= msg._id %>"
+                    data-sender="<%= msg.sender %>"
+                >
 
-                <% if (msg.imageUrl) { %>
+                    <% if (!isSent) { %>
+                        <span class="group-sender-name"><%= msg.senderName %></span>
+                    <% } %>
 
-                    <img
-                        src="<%= msg.imageUrl %>"
-                        class="chat-image"
-                        alt="image message">
+                    <% if (msg.imageUrl) { %>
 
-                <% } else { %>
+                        <img
+                            src="<%= msg.imageUrl %>"
+                            class="chat-image"
+                            alt="image message">
 
-                    <span class="message-text"><%= msg.text %></span>
+                    <% } else if (msg.pdfUrl) { %>
 
-                <% } %>
+                        <a href="/pdf-viewer/<%= msg._id %>" class="pdf-card">
+                            <i class="bi bi-file-earmark-pdf-fill"></i>
+                            <div class="pdf-card-info">
+                                <span class="pdf-card-name"><%= msg.pdfName %></span>
+                                <span class="pdf-card-hint">Tap to view</span>
+                            </div>
+                        </a>
 
-                <span class="message-time">
+                    <% } else { %>
 
-                    <%= new Date(msg.createdAt).toLocaleTimeString("en-IN", {
-                        timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: true
-                    }) %>
+                        <span class="message-text"><%= msg.text %></span>
 
-                </span>
+                    <% } %>
 
-            </div>
+                    <span class="message-time">
+                        <%= new Date(msg.createdAt).toLocaleTimeString("en-IN", {
+                            timeZone: "Asia/Kolkata", hour: "2-digit", minute: "2-digit", hour12: true
+                        }) %>
+                    </span>
 
-        <% } %>
+                </div>
+
+            <% } %>
 
         <% }) %>
 
@@ -186,6 +305,12 @@
         </div>
     </div>
 
+    <div id="pdfPreviewBar" class="pdf-preview-bar">
+        <i class="bi bi-file-earmark-pdf-fill pdf-icon"></i>
+        <span class="pdf-preview-name" id="pdfPreviewName"></span>
+        <button type="button" id="cancelPdf"><i class="bi bi-x-lg"></i></button>
+    </div>
+
     <!-- INPUT -->
 
     <form class="chat-input" id="chatForm" enctype="multipart/form-data">
@@ -198,6 +323,16 @@
             type="file"
             id="imageInput"
             accept="image/*"
+            style="display:none;">
+
+        <label for="pdfInput" class="attach-btn">
+            <i class="bi bi-file-earmark-pdf-fill"></i>
+        </label>
+
+        <input
+            type="file"
+            id="pdfInput"
+            accept="application/pdf"
             style="display:none;">
 
         <input
@@ -221,33 +356,6 @@
     </div>
 
 </div>
-
-<style>
-.group-info-btn {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-decoration: none;
-    color: white;
-    font-size: 20px;
-    transition: 0.2s;
-}
-
-.group-info-btn:hover {
-    background: #0E6B3F;
-}
-
-.group-sender-name {
-    display: block;
-    font-size: 12px;
-    font-weight: 700;
-    color: #0E6B3F;
-    margin-bottom: 3px;
-}
-</style>
 
 <script>
 
@@ -319,7 +427,7 @@ socket.on("userStoppedTypingGroup", (data) => {
 });
 
 // ===============================
-// RECEIVE GROUP MESSAGE
+// SYSTEM MESSAGE
 // ===============================
 
 function addSystemMessage(message) {
@@ -339,6 +447,10 @@ function addSystemMessage(message) {
     scrollToBottom();
 
 }
+
+// ===============================
+// RECEIVE GROUP MESSAGE
+// ===============================
 
 socket.on("newGroupMessage", (data) => {
 
@@ -402,6 +514,16 @@ function addMessage(message, type) {
     let bodyHtml = "";
     if (message.imageUrl) {
         bodyHtml = `<img src="${message.imageUrl}" class="chat-image" alt="image message">`;
+    } else if (message.hasPdf) {
+        bodyHtml = `
+            <a href="/pdf-viewer/${message._id}" class="pdf-card">
+                <i class="bi bi-file-earmark-pdf-fill"></i>
+                <div class="pdf-card-info">
+                    <span class="pdf-card-name">${escapeHtml(message.pdfName)}</span>
+                    <span class="pdf-card-hint">Tap to view</span>
+                </div>
+            </a>
+        `;
     } else {
         bodyHtml = `<span class="message-text">${escapeHtml(message.text)}</span>`;
     }
@@ -421,6 +543,109 @@ function escapeHtml(text) {
     div.textContent = text || "";
     return div.innerHTML;
 }
+function addPendingPdf(fileName) {
+
+    const div = document.createElement("div");
+    div.className = "message sent sending";
+
+    div.innerHTML = `
+        <div class="pdf-card">
+            <i class="bi bi-file-earmark-pdf-fill"></i>
+            <div class="pdf-card-info">
+                <span class="pdf-card-name">${escapeHtml(fileName)}</span>
+                <span class="pdf-card-hint">Sending...</span>
+            </div>
+            <div class="pdf-spinner"></div>
+        </div>
+        <span class="message-time">Sending</span>
+    `;
+
+    messagesContainer.appendChild(div);
+    scrollToBottom();
+
+    return div;
+}
+
+// ===============================
+// IMAGE PICKER + PREVIEW
+// ===============================
+
+const imageInput = document.getElementById("imageInput");
+const imagePreviewBar = document.getElementById("imagePreviewBar");
+const imagePreviewThumb = document.getElementById("imagePreviewThumb");
+const cancelImageBtn = document.getElementById("cancelImage");
+
+let selectedImageFile = null;
+
+imageInput.addEventListener("change", () => {
+
+    const file = imageInput.files[0];
+    if (!file) return;
+
+    // one attachment at a time
+    clearPdfSelection();
+
+    selectedImageFile = file;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        imagePreviewThumb.src = e.target.result;
+        imagePreviewBar.style.display = "block";
+    };
+    reader.readAsDataURL(file);
+});
+
+cancelImageBtn.addEventListener("click", () => {
+    selectedImageFile = null;
+    imageInput.value = "";
+    imagePreviewBar.style.display = "none";
+});
+
+// ===============================
+// PDF PICKER + PREVIEW
+// ===============================
+
+const pdfInput = document.getElementById("pdfInput");
+const pdfPreviewBar = document.getElementById("pdfPreviewBar");
+const pdfPreviewName = document.getElementById("pdfPreviewName");
+const cancelPdfBtn = document.getElementById("cancelPdf");
+
+let selectedPdfFile = null;
+
+function clearPdfSelection() {
+    selectedPdfFile = null;
+    pdfInput.value = "";
+    pdfPreviewBar.style.display = "none";
+}
+
+pdfInput.addEventListener("change", () => {
+
+    const file = pdfInput.files[0];
+    if (!file) return;
+
+    if (file.type !== "application/pdf") {
+        alert("Please choose a PDF file.");
+        clearPdfSelection();
+        return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+        alert("PDF must be smaller than 10 MB.");
+        clearPdfSelection();
+        return;
+    }
+
+    // one attachment at a time
+    selectedImageFile = null;
+    imageInput.value = "";
+    imagePreviewBar.style.display = "none";
+
+    selectedPdfFile = file;
+    pdfPreviewName.textContent = file.name;
+    pdfPreviewBar.style.display = "flex";
+});
+
+cancelPdfBtn.addEventListener("click", clearPdfSelection);
 
 // ===============================
 // SEND MESSAGE
@@ -432,13 +657,15 @@ chatForm.addEventListener("submit", async (e) => {
 
     const message = messageInput.value.trim();
 
-    if (!message && !selectedImageFile) return;
+    if (!message && !selectedImageFile && !selectedPdfFile) return;
 
     messageInput.value = "";
     const fileToSend = imageInput.files[0];
+    const pdfToSend = selectedPdfFile;
     imageInput.value = "";
     selectedImageFile = null;
     imagePreviewBar.style.display = "none";
+    clearPdfSelection();
     messageInput.focus();
 
     socket.emit("groupStopTyping", {
@@ -447,6 +674,43 @@ chatForm.addEventListener("submit", async (e) => {
     });
 
     try {
+
+        // PDFs go through their own route
+        if (pdfToSend) {
+
+            const pendingEl = addPendingPdf(pdfToSend.name);
+
+            try {
+
+                const pdfData = new FormData();
+                pdfData.append("groupId", groupId);
+                pdfData.append("pdf", pdfToSend);
+
+                const pdfResponse = await fetch("/group-messages/pdf", {
+                    method: "POST",
+                    body: pdfData
+                });
+
+                const pdfResult = await pdfResponse.json();
+
+                pendingEl.remove();
+
+                if (!pdfResult.success) {
+                    alert(pdfResult.message);
+                } else {
+                    addMessage(pdfResult.message, "sent");
+                }
+
+            } catch (pdfError) {
+
+                console.error("Send PDF error:", pdfError);
+                pendingEl.remove();
+                alert("Unable to send PDF.");
+
+            }
+
+            if (!message && !fileToSend) return;
+        }
 
         const formData = new FormData();
         formData.append("groupId", groupId);
@@ -477,43 +741,15 @@ chatForm.addEventListener("submit", async (e) => {
 
 });
 
+// ===============================
+// ENTER = SEND
+// ===============================
+
 messageInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
         e.preventDefault();
         chatForm.requestSubmit();
     }
-});
-
-// ===============================
-// IMAGE PICKER + PREVIEW
-// ===============================
-
-const imageInput = document.getElementById("imageInput");
-const imagePreviewBar = document.getElementById("imagePreviewBar");
-const imagePreviewThumb = document.getElementById("imagePreviewThumb");
-const cancelImageBtn = document.getElementById("cancelImage");
-
-let selectedImageFile = null;
-
-imageInput.addEventListener("change", () => {
-
-    const file = imageInput.files[0];
-    if (!file) return;
-
-    selectedImageFile = file;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        imagePreviewThumb.src = e.target.result;
-        imagePreviewBar.style.display = "block";
-    };
-    reader.readAsDataURL(file);
-});
-
-cancelImageBtn.addEventListener("click", () => {
-    selectedImageFile = null;
-    imageInput.value = "";
-    imagePreviewBar.style.display = "none";
 });
 
 // ===============================
